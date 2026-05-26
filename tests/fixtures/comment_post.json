@@ -1,0 +1,18 @@
+{
+  "_description": "Canned $_POST for the single-article comment form. Loaded by tests/run_tests.php, which GETs the article page first to capture session + csrf_token, then POSTs these fields together with csrf_token. blog_url is filled at runtime from a seeded article.",
+  "_button_name": "postMyComm",
+  "fields": {
+    "myCommName":  "Test User",
+    "myCommEmail": "test@example.com",
+    "myComm":      "This is a fixture comment submitted by run_tests.php.",
+    "myComment":   ""
+  },
+  "honeypot_field": "myComment",
+  "expected_redirect_msg": "comment+added",
+  "expected_db_row": {
+    "table":  "blog_comments",
+    "where": {
+      "comment_email": "test@example.com"
+    }
+  }
+}

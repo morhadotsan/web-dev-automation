@@ -1,0 +1,34 @@
+<?php
+// includes/numbersOnly.php — JS client-side input filters.
+// Misnamed for legacy reasons: this is the full validator bundle, not just numbers.
+// Include on any page with form inputs. Wire to inputs via onkeyup="emailsOnly(this)" etc.
+?>
+<script>
+function slugOnly(input){
+    input.value = input.value.replace(/[^a-z0-9-]/g, "");
+}
+function numbersOnly(input){
+    input.value = input.value.replace(/[^0-9+]/g, "");
+}
+function lettersOnly(input){
+    input.value = input.value.replace(/[^a-zA-Z0-9-, |?.'& !%:/()]/g, "");
+}
+function addressOnly(input){
+    input.value = input.value.replace(/[^a-zA-Z0-9- ,.']/g, "");
+}
+function licNumbersOnly(input){
+    input.value = input.value.replace(/[^0-9-]/g, "");
+}
+function emailsOnly(input){
+    input.value = input.value.replace(/[^a-zA-Z0-9-_@.]/g, "");
+}
+function timeOnly(input){
+    input.value = input.value.replace(/[^0-9]/g, "");
+}
+function currencyOnly(input){
+    input.value = input.value.replace(/[^0-9.]/g, "");
+}
+function commentOnly(input){
+    input.value = input.value.replace(/[^a-zA-Z0-9-_ .,'!?]/g, "");
+}
+</script>

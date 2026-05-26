@@ -1,0 +1,120 @@
+<?php
+// functions/functions.php — global PHP helpers used across pages.
+// Included after includes/database.php on every public page.
+
+// Ensure a session id exists (idempotent — page top already called session_start).
+$_uniq = session_id();
+if(empty($_uniq)){ session_start(); }
+$customa_user_agent_id = session_id();
+
+// Client IP (respects forwarded headers).
+function getIp(){
+    $ip = $_SERVER["REMOTE_ADDR"];
+    if(!empty($_SERVER["HTTP_CLIENT_IP"])){
+        $ip = $_SERVER["HTTP_CLIENT_IP"];
+    }elseif(!empty($_SERVER["HTTP_X_FORWARDED_FOR"])){
+        $ip = $_SERVER["HTTP_X_FORWARDED_FOR"];
+    }
+    return $ip;
+}
+$clientIP = getIp();
+
+// View-count formatter: 900 → "900", 1500 → "1.5K", 2_300_000 → "2.3M", ...
+function number_format_short($n, $precision = 1){
+    if($n < 900){
+        $n_format = number_format($n, $precision); $suffix = '';
+    }elseif($n < 900000){
+        $n_format = number_format($n / 1000, $precision); $suffix = 'K';
+    }elseif($n < 900000000){
+        $n_format = number_format($n / 1000000, $precision); $suffix = 'M';
+    }elseif($n < 900000000000){
+        $n_format = number_format($n / 1000000000, $precision); $suffix = 'B';
+    }else{
+        $n_format = number_format($n / 1000000000000, $precision); $suffix = 'T';
+    }
+    if($precision > 0){
+        $dotzero  = '.'.str_repeat('0', $precision);
+        $n_format = str_replace($dotzero, '', $n_format);
+    }
+    return $n_format.$suffix;
+}
+
+// Pagination renderer. Each list page has a small *_paging.php companion
+// that counts total rows for its filter and calls this.
+function renderPagination($totalPosts, $perPage, $baseUrl){
+    $total_pages = (int)ceil($totalPosts / $perPage);
+    if($total_pages <= 1) return;
+
+    $page = isset($_GET['page']) ? (int)preg_replace('/[^0-9]/', '', $_GET['page']) : 1;
+    if($page < 1) $page = 1;
+    if($page > $total_pages) $page = $total_pages;
+
+    $connector = strpos($baseUrl, '?') === false ? '?' : '&';
+    $linkFor = function($p) use ($baseUrl, $connector){
+        return $baseUrl.$connector."page=".$p;
+    };
+
+    echo "<ul>";
+    if($page > 1){
+        $prev = $page - 1;
+        echo "<li><a href='".$linkFor($prev)."'>Prev</a></li>";
+        for($i = max(1, $page - 3); $i < $page; $i++){
+            echo "<li><a href='".$linkFor($i)."'>".$i."</a></li>";
+        }
+    }
+    echo "<li class='selected'>".$page."</li>";
+    for($i = $page + 1; $i <= min($total_pages, $page + 3); $i++){
+        echo "<li><a href='".$linkFor($i)."'>".$i."</a></li>";
+    }
+    if($page != $total_pages){
+        $next = $page + 1;
+        echo "<li><a href='".$linkFor($next)."'>Next</a></li>";
+    }
+    echo "</ul>";
+}
+
+// Word-boundary-aware truncation with ".." suffix.
+function truncate($s, $max){
+    return strlen($s) > $max ? substr($s, 0, strrpos(substr($s, 0, $max), ' ')).'..' : $s;
+}
+
+// Standard 3-col Bootstrap article card. Used wherever a blog teaser appears
+// (archives, search results, author pages). $row is a `blog` row from PDO::FETCH_ASSOC.
+function renderBlogCard($row, $titleMax = 60){
+    global $wiscoy_url;
+    // If blog images are cross-host (e.g. another sibling site), use that here:
+    // global $imageHostURL;  $imgBase = $imageHostURL."blog_images/";
+    $imgBase = $wiscoy_url."assets/img/blog/";
+
+    $titleFull = $row["blog_title"];
+    $title     = truncate($titleFull, $titleMax);
+    $url       = $row["url_slug"];
+    $img       = $row["blog_image"];
+    $catURL    = $row["blog_category"];
+    $cat       = ucwords(str_replace("-"," ",$catURL));
+    $authh     = $row["blog_author"];
+    $auth      = ucwords(str_replace("-"," ",$authh));
+    $date      = date("M d, Y", strtotime($row["blog_date"]));
+
+    echo "
+        <div class='col-xl-4 col-md-6 col-12'>
+            <div class='post-box-layout18 radius-default padding-20'>
+                <div class='figure-holder radius-default'>
+                    <a href='".$wiscoy_url."blogs_on/".$url."' class='link-wrap img-height-100' aria-label='link'>
+                        <img width='660' height='470' src='".$imgBase.$img."' alt='".$titleFull."' />
+                    </a>
+                </div>
+                <div class='content-holder'>
+                    <div class='entry-category'><ul><li><a href='".$wiscoy_url."cat-".$catURL."'>".$cat."</a></li></ul></div>
+                    <h2 class='entry-title'><a href='".$wiscoy_url."blogs_on/".$url."'>".$title."</a></h2>
+                    <ul class='entry-meta'>
+                        <li><a href='".$wiscoy_url."auth-".$authh."'>".$auth."</a></li>
+                        <li>".$date."</li>
+                    </ul>
+                    <a href='".$wiscoy_url."blogs_on/".$url."' class='btn-text'>Read More</a>
+                </div>
+            </div>
+        </div>
+    ";
+}
+?>

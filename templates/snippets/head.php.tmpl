@@ -1,0 +1,82 @@
+<meta charset="UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+<?php
+include("./includes/meta.php");
+
+$brwURL   = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] === "on" ? "https" : "http")."://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+$cleanURL = extractCleanUrl($brwURL);
+
+// Defaults for any meta var the page did not set.
+if(!isset($_neuPgTitle))          $_neuPgTitle          = $shortTitle;
+if(!isset($_neuPgKeywords))       $_neuPgKeywords       = $adm_keywords;
+if(!isset($_neuPgDesc1))          $_neuPgDesc1          = "{{DEFAULT_META_DESC}}";
+if(!isset($_neuPgSiteName))       $_neuPgSiteName       = $shortTitle;
+if(!isset($_nuRobotIndex1))       $_nuRobotIndex1       = "NOINDEX";
+if(!isset($_nuRobotFollow1))      $_nuRobotFollow1      = "NOFOLLOW";
+if(!isset($can_pageUrl))          $can_pageUrl          = $cleanURL;
+if(!isset($_neuPgImg))            $_neuPgImg            = $wiscoy_url."assets/images/icons/favicon.jpg";
+if(!isset($_neuPgArticleSection)) $_neuPgArticleSection = "Blogs";
+if(!isset($_neuPgUpdatedTime))    $_neuPgUpdatedTime    = date("Y-m")."-01 00:00:00";
+if(!isset($_neuPgReadingTime))    $_neuPgReadingTime    = "5 minutes";
+if(!isset($_neuPgType))           $_neuPgType           = "website";
+
+// Dictionary override: if $pgKey was set, copy meta from $pgMeta[$pgKey].
+if(isset($pgKey) && isset($pgMeta[$pgKey])){
+    $_neuPgTitle    = $pgMeta[$pgKey]["page_title"];
+    $_neuPgKeywords = $pgMeta[$pgKey]["meta_keywords"];
+    $_neuPgDesc1    = $pgMeta[$pgKey]["meta_desc"];
+    $_neuPgSiteName = $pgMeta[$pgKey]["fb_ogtitle"];
+    $_nuRobotIndex1 = $pgMeta[$pgKey]["robot_index"];
+    $_nuRobotFollow1= $pgMeta[$pgKey]["robot_follow"];
+    $_neuPgImg      = $pgMeta[$pgKey]["pg_imgLink"];
+    $can_pageUrl    = $pgMeta[$pgKey]["canonical_url"];
+}
+?>
+
+<title><?= $_neuPgTitle; ?></title>
+
+<meta name="author" content="<?= $shortTitle; ?>" />
+<meta name="theme-color" content="#ffffff" />
+
+<meta name="keywords" content="<?= $_neuPgKeywords; ?>" />
+<meta name="description" content="<?= $_neuPgDesc1; ?>" />
+
+<link rel="canonical" href="<?= $can_pageUrl; ?>" />
+
+<!-- Open Graph + Twitter -->
+<meta property="og:locale" content="en_US" />
+<meta property="og:site_name" content="<?= $shortTitle; ?>" />
+<meta property="article:publisher" content="<?= $adm_facebook; ?>" />
+<meta property="article:section" content="<?= $_neuPgArticleSection; ?>" />
+<meta property="og:updated_time" content="<?= $_neuPgUpdatedTime; ?>" />
+<meta property="og:image:secure_url" content="<?= $_neuPgImg; ?>" />
+<meta property="og:image:width" content="256" />
+<meta property="og:image:height" content="256" />
+<meta property="og:image:alt" content="<?= $_neuPgTitle; ?>" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:title" content="<?= $_neuPgTitle; ?>" />
+<meta property="og:url" content="<?= $can_pageUrl; ?>" />
+<meta property="og:type" content="<?= $_neuPgType; ?>" />
+<meta property="og:description" content="<?= $_neuPgDesc1; ?>" />
+<meta property="og:image" content="<?= $_neuPgImg; ?>" />
+
+<meta property="twitter:title" content="<?= $_neuPgTitle; ?>" />
+<meta property="twitter:description" content="<?= $_neuPgDesc1; ?>" />
+<meta name="twitter:image" content="<?= $_neuPgImg; ?>" />
+<meta name="reading-time" content="<?= $_neuPgReadingTime; ?>" />
+
+<!-- Favicons -->
+<link rel="shortcut icon" type="image/x-icon" href="<?= $wiscoy_url; ?>assets/images/icons/favicon.svg" />
+<link rel="apple-touch-icon" href="<?= $wiscoy_url; ?>assets/images/icons/favicon.svg" />
+<link rel="shortcut icon" type="image/x-icon" href="<?= $wiscoy_url; ?>assets/images/icons/favicon.ico" />
+<link rel="shortcut icon" type="image/x-icon" href="<?= $wiscoy_url; ?>assets/images/icons/favicon.png" />
+<meta name="robots" content="<?= $_nuRobotIndex1; ?>,<?= $_nuRobotFollow1; ?>" />
+
+<!-- Stylesheets (adjust to match the input template's vendor CSS) -->
+<link rel="stylesheet" href="<?= $wiscoy_url; ?>assets/css/fonts/icomoon.css" />
+<link rel="stylesheet" href="<?= $wiscoy_url; ?>assets/css/vendor/bootstrap.min.css" />
+<link rel="stylesheet" href="<?= $wiscoy_url; ?>assets/css/app.css" />
+
+<?php include("./includes/google_tags.php"); ?>

@@ -1,0 +1,40 @@
+<?php
+// includes/meta.php — dictionary of per-page SEO meta for static pages.
+// Read by includes/head.php when $pgKey is set before <head>.
+// Add one entry per static page; dynamic pages set the $_neuPg* globals directly.
+
+$pgMeta = [
+    "home" => [
+        "page_title"    => $shortTitle.": {{HOME_TAGLINE}}",
+        "meta_keywords" => $adm_keywords,
+        "meta_desc"     => "{{HOME_DESCRIPTION}}",
+        "fb_ogtitle"    => $shortTitle.": {{HOME_TAGLINE}}",
+        "robot_index"   => "INDEX",
+        "robot_follow"  => "FOLLOW",
+        "pg_imgLink"    => $wiscoy_url."assets/images/icons/favicon.jpg",
+        "canonical_url" => $wiscoy_url
+    ],
+    "about" => [
+        "page_title"    => "{{ABOUT_TITLE}} - ".$shortTitle,
+        "meta_keywords" => $adm_keywords,
+        "meta_desc"     => "{{ABOUT_DESCRIPTION}}",
+        "fb_ogtitle"    => "{{ABOUT_TITLE}} - ".$shortTitle,
+        "robot_index"   => "INDEX",
+        "robot_follow"  => "FOLLOW",
+        "pg_imgLink"    => $wiscoy_url."assets/images/icons/favicon.jpg",
+        "canonical_url" => $wiscoy_url."about-us"
+    ],
+    "contact" => [
+        "page_title"    => "{{CONTACT_TITLE}} - ".$shortTitle,
+        "meta_keywords" => $adm_keywords,
+        "meta_desc"     => "{{CONTACT_DESCRIPTION}}",
+        "fb_ogtitle"    => "{{CONTACT_TITLE}} - ".$shortTitle,
+        "robot_index"   => "INDEX",
+        "robot_follow"  => "FOLLOW",
+        "pg_imgLink"    => $wiscoy_url."assets/images/icons/favicon.jpg",
+        "canonical_url" => $wiscoy_url."contact-us"
+    ],
+    // Add more static pages here. Dynamic pages (category, search, single-author,
+    // our-blogs, 404, single-article) should set $_neuPg* globals directly.
+];
+?>
