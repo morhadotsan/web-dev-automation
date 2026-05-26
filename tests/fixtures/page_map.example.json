@@ -1,0 +1,14 @@
+{
+  "_description": "Optional per-reference page-map for visual_diff.js. When the conversion renamed pages (e.g. archive-layout3.html -> our-blogs.php), drop a copy of this file at references/<task-type>/<project>/page_map.json with the actual renames. If no page_map.json is present, visual_diff.js pairs files by filename (index.html <-> index.php).",
+  "pairs": [
+    { "before": "index.html",              "after": "index.php",                       "label": "home" },
+    { "before": "about.html",              "after": "about.php",                       "label": "about" },
+    { "before": "contact.html",            "after": "contact.php",                     "label": "contact" },
+    { "before": "404.html",                "after": "404.php",                         "label": "404" },
+    { "before": "archive-layout3.html",    "after": "our-blogs.php",                   "label": "archive" },
+    { "before": "category.html",           "after": "category.php?cat_url=business",   "label": "category-business" },
+    { "before": "search.html",             "after": "search.php?searchQuery=sample",   "label": "search" },
+    { "before": "single-author.html",      "after": "single-author.php?auth_url=jane-doe", "label": "author" },
+    { "before": "blog-details.html",       "after": "blogs_on/blog_details.php?blog_url=sample-business-article", "label": "single-article" }
+  ]
+}

@@ -1,0 +1,50 @@
+<?php
+// 404.php — not-found page. All "not found" outcomes in the project should
+// redirect here via header("Location: ./404-page"); exit(); (assumes a rewrite
+// of /404-page → /404.php at server level).
+
+ini_set("session.cookie_httponly", 1);
+session_start();
+include("./includes/database.php");
+include("./functions/functions.php");
+
+$brwURL   = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] === "on" ? "https" : "http")."://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+$currPage = extractCleanUrl($brwURL);
+
+$_neuPgTitle     = "404 Page - Page Not Found";
+$_neuPgKeywords  = "404 Page - Page Not Found";
+$_neuPgDesc1     = "404 Page - Page Not Found";
+$_neuPgSiteName  = $_neuPgTitle;
+$_nuRobotIndex1  = "NOINDEX";
+$_nuRobotFollow1 = "FOLLOW";
+$can_pageUrl     = $currPage;
+$_neuPgImg       = $wiscoy_url."assets/images/icons/favicon.jpg";
+?>
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+<?php include("./includes/head.php"); ?>
+</head>
+<body class="mobilemenu-active">
+    <?php include("./includes/preloader.php"); ?>
+
+    <div id="main-wrapper" class="main-wrapper">
+        <?php include("./includes/header.php"); ?>
+
+        <section class="error-wrap space-bottom-60 space-top-60 bg-color-light-1 transition-default">
+            <div class="container">
+                <div class="error-box img-height-100">
+                    <img width="810" height="499" src="<?= $wiscoy_url."error-404.jpg"; ?>" alt="404" class="mb-3" />
+                    <h2 class="title">Page Not Found</h2>
+                    <p class="description"><?= $_neuPgDesc1." | ".$shortTitle; ?></p>
+                    <a href="<?= $wiscoy_url; ?>" class="axil-btn axil-btn-fill axil-btn-dark axil-btn-large" aria-label="link">Go Back<div class="icon-holder"><i class="regular-arrow-back"></i></div></a>
+                </div>
+            </div>
+        </section>
+
+        <?php include("./includes/footer.php"); ?>
+    </div>
+
+    <?php include("./includes/section-4.php"); ?>
+</body>
+</html>

@@ -1,0 +1,7 @@
+<?php
+// One of these goes in EVERY non-public subfolder (includes/, functions/,
+// blogs_on/, feed/, sitemaps/, and recursively under assets/) to block
+// directory listing. Pure security hygiene — no parameterisation.
+header("location: ../");
+exit();
+?>

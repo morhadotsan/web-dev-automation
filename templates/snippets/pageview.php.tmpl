@@ -1,0 +1,17 @@
+<?php
+// pageview.php — view-tracking insert. Included from single-article pages
+// AFTER the article row is loaded and $get_id (the slug) is in scope.
+// Requires $con, $wiscoy_webSlug, $customa_user_agent_id from earlier includes.
+
+$this_userIP      = $_SERVER["REMOTE_ADDR"] ?? "-";
+$this_userDevData = $_SERVER["HTTP_USER_AGENT"] ?? "-";
+$current_page     = $get_id;
+
+$chk = $con->prepare("SELECT 1 FROM `blog_views` WHERE `user_ip` = ? AND `user_sessKey` = ? AND `current_page` = ? LIMIT 1");
+$chk->execute([$this_userIP, $customa_user_agent_id, $current_page]);
+
+if($chk !== false && $chk->rowCount() <= 0){
+    $ins = $con->prepare("INSERT INTO `blog_views`(`current_page`, `my_web_url`, `user_ip`, `user_sessKey`, `user_device`, `upload_date`) VALUES (?, ?, ?, ?, ?, NOW())");
+    $ins->execute([$current_page, $wiscoy_webSlug, $this_userIP, $customa_user_agent_id, $this_userDevData]);
+}
+?>

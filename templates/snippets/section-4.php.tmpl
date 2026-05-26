@@ -1,0 +1,24 @@
+<?php
+// includes/section-4.php — body-bottom block (sibling of footer, not child).
+// Holds the search modal and EVERY <script> tag in load order.
+// Public pages never load scripts inline; they all live here.
+?>
+<div id="search-trigger" class="search-input-wrap">
+    <div class="container">
+        <button type="button" class="close" aria-label="close">×</button>
+        <form class="search-form" action="<?= $wiscoy_url; ?>search-result" method="GET">
+            <input type="search" value="" placeholder="Search" name="searchQuery" />
+            <button type="submit" class="search-btn" aria-label="search button">
+                <i class="regular-search-02"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Vendor JS (match what the input HTML template ships). -->
+<script src="<?= $wiscoy_url; ?>assets/js/vendor/jquery.min.js"></script>
+<script src="<?= $wiscoy_url; ?>assets/js/vendor/bootstrap.bundle.min.js"></script>
+<!-- Add slick, magnific-popup, isotope, etc. only if the input template uses them. -->
+
+<!-- Site JS -->
+<script src="<?= $wiscoy_url; ?>assets/js/app.js"></script>

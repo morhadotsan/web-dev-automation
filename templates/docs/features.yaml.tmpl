@@ -1,0 +1,23 @@
+# Per-reference project metadata + feature checklist.
+# `site:` describes the project itself.
+# `features:` is the boolean checklist the agent scores new input projects against
+# to prioritise references with the highest feature overlap.
+
+site:
+  url: ""                    # canonical site base URL, e.g. "https://www.example.com/"
+  name: ""                   # short site name, e.g. "Example Magazine"
+  website_slug:              # unique alias (derived from the URL) used to identify this website data from the database
+  description: ""            # one-sentence description of what the site is
+  main_categories: []        # list of category slugs used on the site, e.g. [business, technology, lifestyle]
+
+features:
+  contact_form: false        # has a contact/enquiry form (not just call/chat info cards)
+  newsletter_signup: false   # has a newsletter or email signup form
+  multi_page: false          # more than one page (about, contact, etc.)
+  article_listing: false     # has a blog/article index or archive page
+  single_article: false      # has a single article/post detail page
+  sidebar: false             # has a sidebar (recent posts, categories, ads)
+  categories: false          # content is grouped by category or tag
+  search: false              # has a search form or results page
+  comments: false            # has a comment or reply section
+  image_gallery: false       # has a photo gallery or media grid

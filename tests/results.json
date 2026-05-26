@@ -1,0 +1,133 @@
+{
+    "project": "test-dev-one",
+    "task_type": "html-to-php",
+    "path": "/home/localwebdev/web-dev-automation/output/test-dev-one",
+    "base_url": "http://localhost/web-dev-automation/output/test-dev-one",
+    "db": {
+        "name": "web-dev-automation",
+        "host": "127.0.0.1",
+        "port": 3306,
+        "user": "root"
+    },
+    "started_at": "2026-05-22T11:34:01+00:00",
+    "checks": [
+        {
+            "name": "db.recreate",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "db.schema_loaded",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "db.seed_loaded",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "page.404.http",
+            "pass": true,
+            "detail": "HTTP 200 \u2014 http://localhost/web-dev-automation/output/test-dev-one/404.php"
+        },
+        {
+            "name": "page.404.no_php_errors",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "page.about.http",
+            "pass": true,
+            "detail": "HTTP 200 \u2014 http://localhost/web-dev-automation/output/test-dev-one/about.php"
+        },
+        {
+            "name": "page.about.no_php_errors",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "page.auth_paging.http",
+            "pass": false,
+            "detail": "HTTP 500 \u2014 http://localhost/web-dev-automation/output/test-dev-one/auth_paging.php"
+        },
+        {
+            "name": "page.auth_paging.no_php_errors",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "page.category.http",
+            "pass": true,
+            "detail": "HTTP 200 \u2014 http://localhost/web-dev-automation/output/test-dev-one/category.php?cat_url=business"
+        },
+        {
+            "name": "page.category.no_php_errors",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "page.contact.http",
+            "pass": true,
+            "detail": "HTTP 200 \u2014 http://localhost/web-dev-automation/output/test-dev-one/contact.php"
+        },
+        {
+            "name": "page.contact.no_php_errors",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "page.index.http",
+            "pass": true,
+            "detail": "HTTP 200 \u2014 http://localhost/web-dev-automation/output/test-dev-one/index.php"
+        },
+        {
+            "name": "page.index.no_php_errors",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "page.our-blogs.http",
+            "pass": true,
+            "detail": "HTTP 200 \u2014 http://localhost/web-dev-automation/output/test-dev-one/our-blogs.php"
+        },
+        {
+            "name": "page.our-blogs.no_php_errors",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "page.single_article.http",
+            "pass": true,
+            "detail": "HTTP 200 \u2014 http://localhost/web-dev-automation/output/test-dev-one/blogs_on/blog_details.php?blog_url=sample-business-article"
+        },
+        {
+            "name": "page.single_article.no_php_errors",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "page.author.http",
+            "pass": true,
+            "detail": "HTTP 200 \u2014 http://localhost/web-dev-automation/output/test-dev-one/single-author.php?auth_url=jane-doe"
+        },
+        {
+            "name": "page.author.no_php_errors",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "comment.skipped",
+            "pass": true,
+            "detail": "feature disabled in features.yaml"
+        },
+        {
+            "name": "tenant.filter_holds",
+            "pass": true,
+            "detail": ""
+        }
+    ],
+    "finished_at": "2026-05-22T11:34:05+00:00",
+    "pass_count": 22,
+    "fail_count": 1
+}

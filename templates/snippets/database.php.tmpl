@@ -1,0 +1,69 @@
+<?php
+// includes/database.php — PDO connection + project-wide globals.
+// Included at the top of every public page, immediately after session_start().
+//
+// Project-wide variable convention: `$wiscoy_*` for site identity,
+// `$adm_*` for admin/social, `$shortTitle` for the brand name.
+// Replace every {{PLACEHOLDER}} before use.
+
+$db_host = $db_user = $db_password = $db_name = $wiscoy_url = "";
+$scriptServerName = $_SERVER["SERVER_NAME"];
+
+// Tenant identifier — every query against shared tables filters on this.
+$wiscoy_webSlug = "{{SITE_SLUG}}";
+
+if($scriptServerName == "localhost"){
+    $db_host = "localhost";
+    $db_user = "root";
+    $db_password = "NewStrongPassword123!";
+    // Canonical test DB name. tests/run_tests.php drops + recreates this DB on every run
+    // and seeds it from tests/fixtures/reverbtime.sql + seed.sql. Keep verbatim so the
+    // generated project is testable out of the box.
+    $db_name = "web-dev-automation";
+
+    $wiscoy_url = "{{LOCAL_URL}}"; // e.g. "http://localhost/web-dev-automation/output/{{PROJECT_FOLDER}}/"
+}else{
+    $db_host = "localhost";
+    $db_user = "{{PROD_DB_USER}}";
+    $db_password = "{{PROD_DB_PASS}}";
+    $db_name = "{{PROD_DB_NAME}}";
+
+    $wiscoy_url = "{{PROD_URL}}"; // e.g. "https://www.example.com/"
+}
+
+try{
+    $con = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_password);
+    $con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $con->exec("SET NAMES utf8mb4");
+}catch(PDOException $e){
+    echo "Database Connection failed: ".$e->getMessage();
+    error_log("Database Connection failed: ".$e->getMessage());
+}
+
+// ---- Brand globals ---------------------------------------------------------
+$shortTitle     = "{{SHORT_TITLE}}";              // site name used in titles/footer
+$adm_email      = "{{ADMIN_EMAIL}}";
+$adm_facebook   = "{{ADMIN_FACEBOOK_URL}}";
+$adm_whatsapp   = "{{ADMIN_WHATSAPP_URL}}";       // wa.me/... or api.whatsapp.com/send?phone=...
+$adm_instagram  = "{{ADMIN_INSTAGRAM_URL}}";
+$adm_linkedin   = "{{ADMIN_LINKEDIN_URL}}";
+$adm_twitter    = "{{ADMIN_TWITTER_URL}}";
+$adm_pinterest  = "{{ADMIN_PINTEREST_URL}}";
+$adm_desc       = "{{ADMIN_DESCRIPTION}}";        // sentence used in author bio / OG fallback
+$adm_keywords   = "{{ADMIN_KEYWORDS}}";           // comma-separated SEO keywords fallback
+
+$wiscoy_phone1  = "{{SITE_PHONE}}";
+$wiscoy_address = "{{SITE_ADDRESS}}";
+
+// ---- Optional SQL fragments (treated as trusted constants) -----------------
+// Use only if the project genuinely needs to exclude categories site-wide.
+// $excludeCategories = "AND `blog_category` NOT IN ('{{EXCLUDED_SLUG_1}}', '{{EXCLUDED_SLUG_2}}')";
+
+// ---- Helpers tied to the connection ---------------------------------------
+function extractCleanUrl(string $url): string {
+    $parsed = parse_url($url);
+    $host = $parsed["host"] ?? "";
+    $path = $parsed["path"] ?? "/";
+    return "https://".$host.$path;
+}
+?>

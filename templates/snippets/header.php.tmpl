@@ -1,0 +1,57 @@
+<?php
+// includes/header.php — site header: optional top bar, logo, nav, search trigger.
+// Depends on globals from includes/database.php: $con, $wiscoy_url, $wiscoy_webSlug, $shortTitle.
+// Customise nav items in the <ul class="menu"> block.
+?>
+<header class="header header1 sticky-on">
+    <div id="topbar-wrap">
+        <div class="topbar-global">
+            <div class="container">
+                <div class="d-flex align-items-center justify-content-between gap-1">
+                    <div class="news-feed-wrap">
+                        <div class="news-feed-label">Trending:</div>
+                        <div id="news-feed-slider" class="news-feed-slider initially-none">
+                            <?php
+                                // Five random recent articles in the trending strip.
+                                $tr_q = $con->prepare("SELECT `blog_title`, `url_slug` FROM `blog` WHERE `my_web_url` = ? ORDER BY RAND() LIMIT 5");
+                                $tr_q->execute([$wiscoy_webSlug]);
+                                while($r = $tr_q->fetch(PDO::FETCH_ASSOC)){
+                                    $t = $r["blog_title"];
+                                    $t = strlen($t) > 45 ? substr($t, 0, strrpos(substr($t, 0, 45), ' ')).'..' : $t;
+                            ?>
+                            <div class="single-slide">
+                                <a href="<?= $wiscoy_url."blogs_on/".$r["url_slug"]; ?>" class="link-wrap" aria-label="link"><?= $t; ?></a>
+                            </div>
+                            <?php } ?>
+                        </div>
+                    </div>
+                    <div class="current-date d-lg-block d-none"><?= date("F j, Y"); ?></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="navbar-wrap" class="navbar-wrap">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between">
+                <a href="<?= $wiscoy_url; ?>" class="link-wrap desktop-logo img-height-100" aria-label="<?= $shortTitle; ?>">
+                    <img width="131" height="47" src="<?= $wiscoy_url; ?>assets/img/logo/logo-dark.svg" alt="<?= $shortTitle; ?>" />
+                </a>
+
+                <nav id="dropdown" class="template-main-menu">
+                    <ul class="menu">
+                        <!-- Replace these with the project's actual category slugs. -->
+                        <li class="menu-item"><a href="<?= $wiscoy_url."cat-{{CAT_SLUG_1}}"; ?>" aria-label="{{CAT_LABEL_1}}">{{CAT_LABEL_1}}</a></li>
+                        <li class="menu-item"><a href="<?= $wiscoy_url."cat-{{CAT_SLUG_2}}"; ?>" aria-label="{{CAT_LABEL_2}}">{{CAT_LABEL_2}}</a></li>
+                        <li class="menu-item"><a href="<?= $wiscoy_url."cat-{{CAT_SLUG_3}}"; ?>" aria-label="{{CAT_LABEL_3}}">{{CAT_LABEL_3}}</a></li>
+                        <li class="menu-item"><a href="<?= $wiscoy_url."our-blogs"; ?>" aria-label="Blogs">Blogs</a></li>
+                    </ul>
+                </nav>
+
+                <div class="search-trigger-wrap d-lg-block d-none">
+                    <a href="#search-trigger" title="search" aria-label="search"><i class="regular-search-02"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>

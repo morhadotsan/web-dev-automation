@@ -1,0 +1,53 @@
+# [Task Type] Skill
+
+_Last synthesized: {{date}}_
+_References used: {{count}}_
+
+<!--
+Schema notes:
+- The same sections are used in per-project SKILL.md files AND in the synthesized master.
+- In the master, prefix each pattern with `[Confirmed]` (3+ refs) or `[Emerging]` (1-2 refs) and cite the reference names.
+- In per-project SKILL.md files, drop the prefix and just describe what this project does.
+- Order is fixed so synthesis can compare like-with-like across references.
+- "Project-specific extras" at the bottom is per-project only — it never appears in the master.
+-->
+
+---
+
+## Page Boilerplate
+<!-- The exact top-of-file PHP + outer HTML skeleton every public page follows. Include the literal include() order and any required session/ini calls. This is the single most-copied chunk in the project — pin it down precisely. -->
+
+## File Structure & Folder Roles
+<!-- What lives where and why. Cover: which files sit at the root, what each subfolder is for (includes/, functions/, per-feature subtrees), and any conventions like redirect-stub index.php in non-public folders. -->
+
+## Database & Globals
+<!-- PDO connection style (charset, error mode, env switching), how the connection handle is named and shared, multi-tenant filters, prepared-statement style (positional vs named), fetch idioms (FETCH_ASSOC loops, fetchColumn for counts, rowCount gating), input pre-filtering before binding, and which globals are defined in the connection file. -->
+
+## Routing & Clean URLs
+<!-- The mapping from clean URLs to .php targets, where rewrites are expected (.htaccess, server config, neither), and the convention for "not found" outcomes (redirect to a 404 page vs http_response_code). -->
+
+## Page Meta & SEO
+<!-- How per-page title/description/OG/Twitter/canonical/robots are set: dictionary lookup, direct global assignment, or both. List the exact variable names. Note JSON-LD blocks emitted per page type and pagination/robots rules (e.g. NOINDEX on page 2+). -->
+
+## Shared Includes
+<!-- The fixed set of layout fragments (preloader, header, footer, search modal, sidebar, etc.), their include order, which globals each depends on, and the path style for nested pages (./includes vs ../includes). -->
+
+## Reusable Helpers
+<!-- PHP helper functions defined once and used across pages: card renderers, pagination, truncation, formatters, IP/session helpers. For each: signature, what it emits, where it's typically called from. -->
+
+## Form Handling
+<!-- The end-to-end form recipe: CSRF token render/validate, honeypot, input filtering (regex per field type), submit dispatch (by button name), session-key dedupe, POST → Redirect → GET, where the handler sits relative to the markup. -->
+
+## Security Conventions
+<!-- session.cookie_httponly, redirect-stub index.php in non-public folders, character-class input filtering, CSRF on every POST, any other defensive habits that aren't covered above. -->
+
+## Assets
+<!-- How the asset folder was reorganized from the input HTML, whether images are local or pulled from another host, vendor library layout, and any naming conventions. -->
+
+## Common Mistakes
+<!-- Aggregated from "Manual corrections applied" across all reference NOTES.md files. These are real errors the agent has made on past outputs. Leave blank in a per-project SKILL.md (the project's own corrections go in its NOTES.md). -->
+
+---
+
+## Project-specific extras
+<!-- Per-project only. Anything material to this project that doesn't fit the schema above. Drop this entire section in the master synthesized SKILL.md. -->

@@ -1,0 +1,57 @@
+<?php
+// Boilerplate for any new public PHP page at the project root.
+// For pages in a subfolder, change ./includes/ → ../includes/ and ./functions/ → ../functions/.
+
+ini_set("session.cookie_httponly", 1);
+session_start();
+include("./includes/database.php");
+include("./functions/functions.php");
+
+// ----- Page meta -----------------------------------------------------------
+// EITHER use a dictionary entry from includes/meta.php for static pages:
+// $pgKey = "{{PAGE_KEY}}";
+//
+// OR set meta globals directly for dynamic pages:
+// $_neuPgTitle      = "{{PAGE_TITLE}}";
+// $_neuPgKeywords   = $adm_keywords;
+// $_neuPgDesc1      = "{{PAGE_DESCRIPTION}}";
+// $_neuPgSiteName   = $_neuPgTitle;
+// $_nuRobotIndex1   = "INDEX";
+// $_nuRobotFollow1  = "FOLLOW";
+// $_neuPgImg        = $wiscoy_url."assets/images/icons/favicon.jpg";
+// $brwURL  = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] === "on" ? "https" : "http")."://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+// $can_pageUrl = extractCleanUrl($brwURL);
+?>
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+<?php include("./includes/head.php"); ?>
+</head>
+<body class="mobilemenu-active">
+    <?php include("./includes/preloader.php"); ?>
+
+    <div id="main-wrapper" class="main-wrapper">
+        <?php include("./includes/header.php"); ?>
+
+        <!-- Optional breadcrumb -->
+        <section class="breadcrumb-wrap-layout1 bg-color-old-lace">
+            <div class="container">
+                <div class="breadcrumb-layout1">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="<?= $wiscoy_url; ?>" aria-label="link">Home</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{{PAGE_LABEL}}</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </section>
+
+        <!-- Page-specific <section> blocks go here -->
+
+        <?php include("./includes/footer.php"); ?>
+    </div>
+
+    <?php include("./includes/section-4.php"); ?>
+</body>
+</html>

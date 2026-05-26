@@ -1,0 +1,32 @@
+<?php
+// *_paging.php — one tiny companion per list page (our-blogs, category, search, ...).
+// Runs the COUNT(*) for that page's filter and hands off to renderPagination().
+// Lives at the project root and is included from the listing page's "pagination" slot.
+//
+// Conventions:
+// - $per_page is set in the listing page before this file is included (typically 30).
+// - $wiscoy_url, $wiscoy_webSlug, $con come from includes/database.php (already loaded).
+// - For filtered pages (category/search), the same filter values from $_GET must be
+//   available here — re-derive them from $_GET so this file works standalone.
+
+// Example: our-blogs.php (no filter, all rows for this tenant).
+$cnt = $con->prepare("SELECT COUNT(*) FROM `blog` WHERE `my_web_url` = ?");
+$cnt->execute([$wiscoy_webSlug]);
+$total_posts = (int)$cnt->fetchColumn();
+
+renderPagination($total_posts, $per_page, $wiscoy_url."our-blogs");
+
+// Example: category.php (filtered by ?cat_url=<slug>).
+// $catSlug = preg_replace("/[^a-z0-9-]/", "", $_GET["cat_url"] ?? "");
+// $cnt = $con->prepare("SELECT COUNT(*) FROM `blog` WHERE `blog_category` = ? AND `my_web_url` = ?");
+// $cnt->execute([$catSlug, $wiscoy_webSlug]);
+// $total_posts = (int)$cnt->fetchColumn();
+// renderPagination($total_posts, $per_page, $wiscoy_url."cat-".$catSlug);
+
+// Example: search.php (filtered by ?searchQuery=<terms>).
+// $q = preg_replace("/[^a-zA-Z0-9 ]/", "", $_GET["searchQuery"] ?? "");
+// $cnt = $con->prepare("SELECT COUNT(*) FROM `blog` WHERE `my_web_url` = ? AND `blog_title` LIKE ?");
+// $cnt->execute([$wiscoy_webSlug, "%".$q."%"]);
+// $total_posts = (int)$cnt->fetchColumn();
+// renderPagination($total_posts, $per_page, $wiscoy_url."search-result?searchQuery=".urlencode($q));
+?>
