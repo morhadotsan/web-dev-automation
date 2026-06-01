@@ -21,25 +21,25 @@ The top-level `CLAUDE.md` and the per-task `SKILL.md` files in `skills/` are syn
 web-dev-automation/
 ├── skills/
 │   ├── html-to-php/
-│   │   └── SKILL.md                      # methodology for HTML → PHP conversions
+│   │   └── SKILL.md                    # methodology for HTML → PHP conversions
 │   └── mysqli-to-pdo/
-│       └── SKILL.md                      # methodology for mysqli → PDO refactors
+│       └── SKILL.md                    # methodology for mysqli → PDO refactors
 ├── references/
-│   ├── INDEX.md                          # auto-managed list of all references
+│   ├── INDEX.md                        # auto-managed list of all references
 │   ├── html-to-php/
 │   │   ├── ny-mag-ag/
-│   │   │   ├── before/                   # original clean HTML input
-│   │   │   ├── after/                    # final converted PHP output
-│   │   │   ├── CLAUDE.md                 # this project's structure
-│   │   │   ├── SKILL.md                  # this project's coding methodology
-│   │   │   ├── NOTES.md                  # synthesis hints and manual corrections
-│   │   │   └── features.yaml             # blog feature checklist for reference matching
+│   │   │   ├── before/                 # original clean HTML input
+│   │   │   ├── after/                  # final converted PHP output
+│   │   │   ├── CLAUDE.md               # this project's structure
+│   │   │   ├── SKILL.md                # this project's coding methodology
+│   │   │   ├── NOTES.md                # synthesis hints and manual corrections
+│   │   │   └── features.yaml           # blog feature checklist for reference matching
 │   │   ├── project-beta/
 │   │   └── project-gamma/
 │   └── mysqli-to-pdo/
 │       ├── legacy-blog/
-│       │   ├── before/                   # original mysqli-based PHP
-│       │   ├── after/                    # final PDO-refactored PHP
+│       │   ├── before/                 # original mysqli-based PHP
+│       │   ├── after/                  # final PDO-refactored PHP
 │       │   ├── CLAUDE.md
 │       │   ├── SKILL.md
 │       │   ├── NOTES.md
@@ -68,22 +68,17 @@ web-dev-automation/
 │       ├── notes.md.tmpl               # NOTES.md template for new references
 │       ├── features.yaml.tmpl          # site metadata + feature checklist template
 │       └── skill.md.tmpl               # SKILL.md schema template
-├── resources/                          # dummy resources for new projects
-│   ├── favicon.{png,jpg,ico,svg}
-│   ├── square-logo.{jpg,png,svg}
-│   ├── error-404.{jpg}
-│   └── rect-logo.{jpg,png,svg}
 ├── tests/
-│   ├── run_tests.php           # main test runner, emits JSON
-│   ├── visual_diff.js          # Puppeteer screenshot comparison
-│   └── fixtures/               # canned form submissions, sample DB rows
-├── input/                      # drop new project folders here (HTML or mysqli PHP)
-├── output/                     # generated PHP projects land here
-├── create_project.php          # main CLI — converts input to output
-├── update_references.php       # adds completed projects as references
-├── CLAUDE.md                   # master project structure
-├── README.md                   # project overview and how to use this agent via CLI
-├── .env                        # API keys (Claude Console, etc.)
+│   ├── run_tests.php                   # main test runner, emits JSON
+│   ├── structural_diff.php             # DOM section-by-section input HTML vs generated PHP
+│   └── fixtures/                       # canned form submissions, sample DB rows
+├── input/                              # drop new project folders here (HTML or mysqli PHP)
+├── output/                             # generated PHP projects land here
+├── create_project.php                  # main CLI — converts input to output
+├── update_references.php               # adds completed projects as references
+├── CLAUDE.md                           # master project structure
+├── README.md                           # project overview and how to use this agent via CLI
+├── .env                                # API keys (Claude Console, etc.)
 └── .gitignore
 ```
 
@@ -95,15 +90,13 @@ web-dev-automation/
 
 **`input/`** — drop zone for a new project. Either a raw HTML folder (triggers the html-to-php pipeline) or an existing `mysqli`-based PHP project (triggers the mysqli-to-pdo pipeline). One project at a time. The agent detects which type it is from the contents, or you can pass an explicit flag to `create_project.php`.
 
-**`resources/`** — template assets (favicons, placeholder logos in multiple formats) that get copied into new projects as sensible defaults. Mostly used by the html-to-php pipeline.
-
 **`templates/snippets/`** — canonical PHP fragments that the agent uses as reusable building blocks instead of writing common boilerplate from scratch. The set is seeded from `references/html-to-php/ny-mag-ag/` (the first reference) and covers connection + globals (`database.php`), per-page SEO (`meta.php`, `head.php`), layout fragments (`header.php`, `footer.php`, `section-4.php`, `preloader.php`, `google_tags.php`), security (`CSRFProtection.php`, `index-redirect.php`, `numbersOnly.php`), helpers (`functions.php`, `blogRedirects.php`), and page-level skeletons (`page.php`, `404.php`, `pageview.php`, `paging.php`). Every snippet uses `{{PLACEHOLDER}}` markers for site-specific values. Primarily consumed by the html-to-php pipeline; the mysqli-to-pdo pipeline leans more on patterns extracted from references than on fresh snippets.
 
 **`templates/docs/`** — documentation templates scaffolded by `update_references.php` whenever a new reference is added. `notes.md.tmpl` provides the three-section structure for `NOTES.md`; `features.yaml.tmpl` provides the `site:` metadata block and the boolean `features:` checklist; `skill.md.tmpl` provides the fixed schema that all synthesized `SKILL.md` files must follow.
 
 **`output/`** — where finished PHP projects land. One folder per converted/refactored project.
 
-**`tests/`** — quality gates. `run_tests.php` is the main runner and emits JSON for easy programmatic checking. `visual_diff.js` uses Puppeteer to screenshot the generated output and compare it against the original (for html-to-php jobs), catching visual regressions. `fixtures/` holds canned form submissions and sample database rows so the generated PHP can be exercised end-to-end.
+**`tests/`** — quality gates. `run_tests.php` is the main runner and emits JSON for easy programmatic checking. `structural_diff.php` compares the input HTML against the generated PHP section-by-section at the DOM level (for html-to-php jobs): it renders each PHP page to the HTML it would emit — resolving includes inline — then matches major sections and verifies every input element survives the conversion, catching structural regressions. `fixtures/` holds canned form submissions and sample database rows so the generated PHP can be exercised end-to-end.
 
 **`CLAUDE.md`** (root) — master project structure, synthesized from all the per-project `CLAUDE.md` files across both `references/` subfolders.
 
@@ -119,7 +112,7 @@ The whole thing is designed around a self-reinforcing cycle:
 
 1. A new project lands in `input/` (HTML folder or `mysqli` PHP project).
 2. `create_project.php` runs the agent, which detects the project type, loads the matching `SKILL.md` from `skills/`, and consults relevant references of that type.
-3. Generated PHP goes to `output/`, gets tested by `run_tests.php` and (where applicable) `visual_diff.js`.
+3. Generated PHP goes to `output/`, gets tested by `run_tests.php` and (where applicable) `structural_diff.php`.
 4. Once a project is verified good, `update_references.php` promotes it into the matching `references/<task-type>/` subfolder with fresh `CLAUDE.md`/`SKILL.md`/`NOTES.md` files.
 5. The master `CLAUDE.md` and the matching `skills/<task-type>/SKILL.md` are re-synthesized, incorporating whatever new patterns showed up.
 6. The next project of that type benefits from everything learned so far.

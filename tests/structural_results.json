@@ -1,0 +1,243 @@
+{
+    "project": "test-dev-one",
+    "task_type": "html-to-php",
+    "after_dir": "/home/localwebdev/web-dev-auto-v2/output/test-dev-one",
+    "started_at": "2026-06-01T13:46:33+00:00",
+    "pairs": [
+        {
+            "label": "home",
+            "pass": false,
+            "sections": [
+                {
+                    "label": "s0",
+                    "method": "class",
+                    "input_sig": "div.left-side-menu.w-layout-cell",
+                    "output_sig": "div.left-side-menu.w-layout-cell",
+                    "pass": true,
+                    "missing": [],
+                    "extra": []
+                },
+                {
+                    "label": "s1",
+                    "method": "class",
+                    "input_sig": "div.right-content.w-layout-cell",
+                    "output_sig": "div.right-content.w-layout-cell",
+                    "pass": false,
+                    "missing": [
+                        "4:div.latest-post-item.w-dyn-item",
+                        "4:div.top-stories-item.w-dyn-item#w-node-_3c8453ea-eae5-0bc4-c9ea-8a67a236978c-4bd4aefd",
+                        "4:div.blog-item.w-col.w-col-4.w-dyn-item"
+                    ],
+                    "extra": [
+                        "4:script"
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "about",
+            "pass": true,
+            "sections": [
+                {
+                    "label": "s0",
+                    "method": "class",
+                    "input_sig": "div.left-side-menu.w-layout-cell",
+                    "output_sig": "div.left-side-menu.w-layout-cell",
+                    "pass": true,
+                    "missing": [],
+                    "extra": []
+                },
+                {
+                    "label": "s1",
+                    "method": "class",
+                    "input_sig": "div.right-content.w-layout-cell",
+                    "output_sig": "div.right-content.w-layout-cell",
+                    "pass": true,
+                    "missing": [],
+                    "extra": [
+                        "4:script"
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "404-page",
+            "pass": true,
+            "sections": [
+                {
+                    "label": "s0",
+                    "method": "class",
+                    "input_sig": "div.left-side-menu.w-layout-cell",
+                    "output_sig": "div.left-side-menu.w-layout-cell",
+                    "pass": true,
+                    "missing": [],
+                    "extra": []
+                },
+                {
+                    "label": "s1",
+                    "method": "class",
+                    "input_sig": "div.right-content.w-layout-cell",
+                    "output_sig": "div.right-content.w-layout-cell",
+                    "pass": true,
+                    "missing": [],
+                    "extra": [
+                        "4:script"
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "contact",
+            "pass": true,
+            "sections": [
+                {
+                    "label": "s0",
+                    "method": "class",
+                    "input_sig": "div.left-side-menu.w-layout-cell",
+                    "output_sig": "div.left-side-menu.w-layout-cell",
+                    "pass": true,
+                    "missing": [],
+                    "extra": []
+                },
+                {
+                    "label": "s1",
+                    "method": "class",
+                    "input_sig": "div.right-content.w-layout-cell",
+                    "output_sig": "div.right-content.w-layout-cell",
+                    "pass": true,
+                    "missing": [],
+                    "extra": [
+                        "4:script"
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "blogs",
+            "pass": false,
+            "sections": [
+                {
+                    "label": "s0",
+                    "method": "class",
+                    "input_sig": "div.left-side-menu.w-layout-cell",
+                    "output_sig": "div.left-side-menu.w-layout-cell",
+                    "pass": true,
+                    "missing": [],
+                    "extra": []
+                },
+                {
+                    "label": "s1",
+                    "method": "class",
+                    "input_sig": "div.right-content.w-layout-cell",
+                    "output_sig": "div.right-content.w-layout-cell",
+                    "pass": false,
+                    "missing": [
+                        "4:div.home-blog-list-item.w-dyn-item"
+                    ],
+                    "extra": [
+                        "2:div.pagination-wrapper",
+                        "4:script"
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "archive",
+            "pass": false,
+            "sections": [
+                {
+                    "label": "s0",
+                    "method": "class",
+                    "input_sig": "div.left-side-menu.w-layout-cell",
+                    "output_sig": "div.left-side-menu.w-layout-cell",
+                    "pass": true,
+                    "missing": [],
+                    "extra": []
+                },
+                {
+                    "label": "s1",
+                    "method": "class",
+                    "input_sig": "div.right-content.w-layout-cell",
+                    "output_sig": "div.right-content.w-layout-cell",
+                    "pass": false,
+                    "missing": [
+                        "4:div.latest-post-item.w-dyn-item",
+                        "4:div.blog-item.w-col.w-col-4.w-dyn-item"
+                    ],
+                    "extra": [
+                        "2:div.pagination-wrapper",
+                        "4:script"
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "author",
+            "pass": false,
+            "sections": [
+                {
+                    "label": "s0",
+                    "method": "class",
+                    "input_sig": "div.left-side-menu.w-layout-cell",
+                    "output_sig": "div.left-side-menu.w-layout-cell",
+                    "pass": true,
+                    "missing": [],
+                    "extra": []
+                },
+                {
+                    "label": "s1",
+                    "method": "class",
+                    "input_sig": "div.right-content.w-layout-cell",
+                    "output_sig": "div.right-content.w-layout-cell",
+                    "pass": false,
+                    "missing": [
+                        "4:div.home-2-blog-item.w-dyn-item"
+                    ],
+                    "extra": [
+                        "2:div.about-content",
+                        "3:div.about-stack.w-layout-layout.wf-layout-layout",
+                        "4:div.about-man.w-layout-cell",
+                        "4:div.about-text.w-layout-cell",
+                        "2:div.space-line",
+                        "3:img.dottet-image",
+                        "2:div.main-title-wrapper",
+                        "3:h2.mine-title",
+                        "3:img.title-line",
+                        "2:div.pagination-wrapper",
+                        "4:script"
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "single-article",
+            "pass": true,
+            "sections": [
+                {
+                    "label": "s0",
+                    "method": "class",
+                    "input_sig": "div.left-side-menu.w-layout-cell",
+                    "output_sig": "div.left-side-menu.w-layout-cell",
+                    "pass": true,
+                    "missing": [],
+                    "extra": []
+                },
+                {
+                    "label": "s1",
+                    "method": "class",
+                    "input_sig": "div.right-content.w-layout-cell",
+                    "output_sig": "div.right-content.w-layout-cell",
+                    "pass": true,
+                    "missing": [],
+                    "extra": [
+                        "4:script"
+                    ]
+                }
+            ]
+        }
+    ],
+    "finished_at": "2026-06-01T13:46:33+00:00",
+    "pass_count": 4,
+    "fail_count": 4,
+    "skip_count": 0
+}

@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+
+RewriteEngine On
+
+# Rewrite .xml clean URLs to the corresponding .php sitemap files.
+# Add one RewriteRule per sitemap file in this folder.
+# Standard entries (always present):
+RewriteRule ^authors\.xml$ authors.php [L]
+RewriteRule ^blog-1\.xml$ blog-1.php [L]
+RewriteRule ^blog-2\.xml$ blog-2.php [L]
+RewriteRule ^category\.xml$ category.php [L]
+# Per-category entries — add one per main_category from features.yaml:
+# RewriteRule ^<category>\.xml$ <category>.php [L]
+
+</IfModule>
