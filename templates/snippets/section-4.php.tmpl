@@ -1,24 +1,29 @@
-<?php
-// includes/section-4.php — body-bottom block (sibling of footer, not child).
-// Holds the search modal and EVERY <script> tag in load order.
-// Public pages never load scripts inline; they all live here.
-?>
-<div id="search-trigger" class="search-input-wrap">
-    <div class="container">
-        <button type="button" class="close" aria-label="close">×</button>
-        <form class="search-form" action="<?= $wiscoy_url; ?>search-result" method="GET">
-            <input type="search" value="" placeholder="Search" name="searchQuery" />
-            <button type="submit" class="search-btn" aria-label="search button">
-                <i class="regular-search-02"></i>
-            </button>
-        </form>
-    </div>
-</div>
+<!-- includes/section-4.php — body-bottom block (sibling of header/footer, not child).
+     Holds EVERY <script> tag in load order.
+     IMPORTANT: Only include JS files that actually exist in the input template's js/
+     folder. If the input ships webfont.js, add the WebFont.load() call. If the input
+     ships bootstrap.bundle.min.js, include that instead. Match the input exactly.
+     Never add scripts (search modals, sweetalert, slick, etc.) not in the input HTML.
+-->
 
-<!-- Vendor JS (match what the input HTML template ships). -->
-<script src="<?= $wiscoy_url; ?>assets/js/vendor/jquery.min.js"></script>
-<script src="<?= $wiscoy_url; ?>assets/js/vendor/bootstrap.bundle.min.js"></script>
-<!-- Add slick, magnific-popup, isotope, etc. only if the input template uses them. -->
+<!-- Vendor JS — match what the input HTML template ships. -->
+<script src="<?= $wiscoy_url; ?>assets/js/jquery.min.js" type="text/javascript"></script>
+<!-- Add or replace scripts based on what the input template includes: -->
+<!-- <script src="<?= $wiscoy_url; ?>assets/js/vendor/bootstrap.bundle.min.js"></script> -->
+<script src="<?= $wiscoy_url; ?>assets/js/webfont.js" type="text/javascript"></script>
+<script src="<?= $wiscoy_url; ?>assets/js/plugins.js" type="text/javascript"></script>
 
-<!-- Site JS -->
-<script src="<?= $wiscoy_url; ?>assets/js/app.js"></script>
+<!-- Include WebFont.load() only if the input template uses webfont.js. -->
+<script type="text/javascript">
+    WebFont.load({
+        google: {
+            families: [
+                /* Replace with the font families the input template actually loads */
+                "{{FONT_FAMILY_1}}",
+                "{{FONT_FAMILY_2}}",
+            ],
+        },
+    });
+</script>
+
+<?php include("./includes/numbersOnly.php"); ?>

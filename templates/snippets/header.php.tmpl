@@ -1,57 +1,57 @@
-<?php
-// includes/header.php — site header: optional top bar, logo, nav, search trigger.
-// Depends on globals from includes/database.php: $con, $wiscoy_url, $wiscoy_webSlug, $shortTitle.
-// Customise nav items in the <ul class="menu"> block.
-?>
-<header class="header header1 sticky-on">
-    <div id="topbar-wrap">
-        <div class="topbar-global">
-            <div class="container">
-                <div class="d-flex align-items-center justify-content-between gap-1">
-                    <div class="news-feed-wrap">
-                        <div class="news-feed-label">Trending:</div>
-                        <div id="news-feed-slider" class="news-feed-slider initially-none">
-                            <?php
-                                // Five random recent articles in the trending strip.
-                                $tr_q = $con->prepare("SELECT `blog_title`, `url_slug` FROM `blog` WHERE `my_web_url` = ? ORDER BY RAND() LIMIT 5");
-                                $tr_q->execute([$wiscoy_webSlug]);
-                                while($r = $tr_q->fetch(PDO::FETCH_ASSOC)){
-                                    $t = $r["blog_title"];
-                                    $t = strlen($t) > 45 ? substr($t, 0, strrpos(substr($t, 0, 45), ' ')).'..' : $t;
-                            ?>
-                            <div class="single-slide">
-                                <a href="<?= $wiscoy_url."blogs_on/".$r["url_slug"]; ?>" class="link-wrap" aria-label="link"><?= $t; ?></a>
-                            </div>
-                            <?php } ?>
-                        </div>
-                    </div>
-                    <div class="current-date d-lg-block d-none"><?= date("F j, Y"); ?></div>
-                </div>
-            </div>
+<!-- includes/header.php — site nav / sidebar.
+     IMPORTANT: The HTML structure here (wrapper divs, class names, nesting) MUST be
+     taken from the input template's nav region. Only add PHP globals and lazy-load
+     script; never synthesize HTML elements (newsletter forms, search bars, trending
+     strips, etc.) that are not present in the input HTML.
+
+     Globals available: $wiscoy_url, $shortTitle, $adm_facebook, $adm_twitter,
+                        $adm_instagram, $adm_linkedin, $con, $wiscoy_webSlug.
+
+     If the input header is a top bar + navbar, produce that.
+     If the input header is a left sidebar menu, produce that.
+     Adapt the category links to the project's actual categories (from features.yaml).
+-->
+
+<!-- Example: left-sidebar layout (adapt class names from the input HTML) -->
+<div class="{{LEFT_SIDEBAR_WRAPPER_CLASS}}">
+    <div class="{{LEFT_MENU_CLASS}}">
+        <a href="<?= $wiscoy_url; ?>" class="{{LOGO_LINK_CLASS}}">
+            <img src="<?= $wiscoy_url; ?>assets/images/{{LOGO_FILE}}" loading="lazy" alt="<?= $shortTitle; ?>" class="{{LOGO_IMG_CLASS}}" />
+        </a>
+        <div class="{{CATEGORIES_MENU_CLASS}}">
+            <!-- Replace with actual category slugs and labels from features.yaml -->
+            <a href="<?= $wiscoy_url; ?>cat-{{CAT_SLUG_1}}" class="{{CAT_LINK_CLASS}}">
+                <div class="{{CAT_TEXT_CLASS}}">{{CAT_LABEL_1}}</div>
+            </a>
+            <a href="<?= $wiscoy_url; ?>cat-{{CAT_SLUG_2}}" class="{{CAT_LINK_CLASS}}">
+                <div class="{{CAT_TEXT_CLASS}}">{{CAT_LABEL_2}}</div>
+            </a>
+            <a href="<?= $wiscoy_url; ?>our-blogs" class="{{CAT_LINK_CLASS}}">
+                <div class="{{CAT_TEXT_CLASS}}">All Blogs</div>
+            </a>
+        </div>
+        <div class="{{SOCIALS_CLASS}}">
+            <a href="<?= $adm_facebook; ?>" target="_blank" rel="nofollow" aria-label="Facebook">
+                <img src="<?= $wiscoy_url; ?>assets/images/facebook.png" loading="lazy" alt="Facebook" />
+            </a>
+            <a href="<?= $adm_twitter; ?>" target="_blank" rel="nofollow" aria-label="Twitter">
+                <img src="<?= $wiscoy_url; ?>assets/images/twitter.png" loading="lazy" alt="Twitter" />
+            </a>
+            <a href="<?= $adm_instagram; ?>" target="_blank" rel="nofollow" aria-label="Instagram">
+                <img src="<?= $wiscoy_url; ?>assets/images/instagram.png" loading="lazy" alt="Instagram" />
+            </a>
         </div>
     </div>
+</div>
 
-    <div id="navbar-wrap" class="navbar-wrap">
-        <div class="container">
-            <div class="d-flex align-items-center justify-content-between">
-                <a href="<?= $wiscoy_url; ?>" class="link-wrap desktop-logo img-height-100" aria-label="<?= $shortTitle; ?>">
-                    <img width="131" height="47" src="<?= $wiscoy_url; ?>assets/img/logo/logo-dark.svg" alt="<?= $shortTitle; ?>" />
-                </a>
-
-                <nav id="dropdown" class="template-main-menu">
-                    <ul class="menu">
-                        <!-- Replace these with the project's actual category slugs. -->
-                        <li class="menu-item"><a href="<?= $wiscoy_url."cat-{{CAT_SLUG_1}}"; ?>" aria-label="{{CAT_LABEL_1}}">{{CAT_LABEL_1}}</a></li>
-                        <li class="menu-item"><a href="<?= $wiscoy_url."cat-{{CAT_SLUG_2}}"; ?>" aria-label="{{CAT_LABEL_2}}">{{CAT_LABEL_2}}</a></li>
-                        <li class="menu-item"><a href="<?= $wiscoy_url."cat-{{CAT_SLUG_3}}"; ?>" aria-label="{{CAT_LABEL_3}}">{{CAT_LABEL_3}}</a></li>
-                        <li class="menu-item"><a href="<?= $wiscoy_url."our-blogs"; ?>" aria-label="Blogs">Blogs</a></li>
-                    </ul>
-                </nav>
-
-                <div class="search-trigger-wrap d-lg-block d-none">
-                    <a href="#search-trigger" title="search" aria-label="search"><i class="regular-search-02"></i></a>
-                </div>
-            </div>
-        </div>
-    </div>
-</header>
+<!-- Lazy-load script: swap data-src → src after page load for all .lzImg2 elements. -->
+<script>
+window.addEventListener("load", function(){
+    setTimeout(function(){
+        $(".lzImg2").each(function(){
+            let lazyImgSrc2 = $(this).data("src");
+            $(this).attr("src", lazyImgSrc2);
+        });
+    }, 150);
+});
+</script>

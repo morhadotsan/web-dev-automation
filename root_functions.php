@@ -41,7 +41,7 @@ flags:
                                          console     -> Anthropic API, billed to ANTHROPIC_API_KEY
                                          claude-code -> local `claude` CLI, billed to your CC subscription
   --model <model-id>                   override the model (default: claude-sonnet-4-6)
-  --skip-tests                         skip run_tests.php and visual_diff.js
+  --skip-tests                         skip run_tests.php and structural_diff.php
   --dry-run                            build the prompt and write .last-prompt.json, no API call
   -y, --yes                            skip the confirmation prompt (non-interactive)
   -h, --help                           show this help
@@ -302,7 +302,7 @@ function collect_input_tree(string $inputDir): array {
 // ============================================================================
 
 function build_system_prompt(string $taskType, string $skill, array $rankedRefs, array $snippets, string $projectName = ""): array {
-    $localUrl = $projectName !== "" ? "http://localhost/web-dev-automation/output/$projectName/" : "http://localhost/web-dev-automation/output/<project-name>/";
+    $localUrl = $projectName !== "" ? "http://localhost/web-dev-auto-v2/output/$projectName/" : "http://localhost/web-dev-auto-v2/output/<project-name>/";
     $blocks = [];
     $blocks[] = ["type" => "text", "text" =>
         "You are the web-dev-automation agent. Convert the given input project into a complete, working PHP output project by following the methodology below precisely.\n\n" .
@@ -316,14 +316,11 @@ function build_system_prompt(string $taskType, string $skill, array $rankedRefs,
         "Rules:\n" .
         "- 'files' contains ONLY text files you generate (PHP, CSS, JS, MD, YAML, SQL). NO binaries.\n" .
         "- 'asset_copies' tells the orchestrator to copy binary input assets (images, fonts, .webp, etc.) into the output. Use for every binary the project needs.\n" .
-        "- DO NOT emit favicons, logos, or error-404 images — the orchestrator copies those from resources/ automatically.\n" .
-        "- Logo/favicon paths in generated PHP MUST use ONLY these standardized paths (never input-template logo paths):\n" .
-        "    Favicons     : assets/images/icons/favicon.{ico,png,jpg,svg}\n" .
-        "    Desktop logo : assets/img/logo/rect-logo.svg  (or .png)\n" .
-        "    Mobile logo  : assets/img/logo/square-logo.svg  (or .png)\n" .
-        "    Sidebar/RSS/sitemap logo: website-logo.svg  (or .png, at project root)\n" .
-        "  These exact files are placed there by the orchestrator; any other logo path will 404.\n" .
         "- Paths use forward slashes, relative to the project root. Never absolute, never with '..'.\n" .
+        "- NEVER emit empty alt attributes on <img> tags. Always use a meaningful value: the blog title, author name, or a descriptive string from the DB row.\n" .
+        "- Blog and article images are cross-hosted. ALWAYS load them with the lazy pattern:\n" .
+        "    class=\"lzImg2\" src=\"<?= \$reverbURL.\"reverb_images/blog_images/lazy-img.png\"; ?>\" data-src=\"<?= \$reverbURL.\"reverb_images/blog_images/\".\$img; ?>\"\n" .
+        "  NEVER use \$wiscoy_url or assets/ paths for blog content images — they are not on this server.\n" .
         "- The localhost branch of includes/database.php MUST use \$db_name = \"web-dev-automation\" verbatim (canonical test DB).\n" .
         "- The localhost branch of includes/database.php MUST set \$wiscoy_url = \"$localUrl\" — use this project's folder name, NEVER copy the URL from a reference project.\n" .
         "- Drop a redirect-stub index.php (header('location: ../'); exit();) in every non-public subfolder, recursively under assets/.\n" .
@@ -603,39 +600,6 @@ function copy_input_assets(string $inputDir, string $outputDir, array $moves): i
     return $n;
 }
 
-function copy_project_resources(string $repoRoot, string $outputDir): int {
-    // Always copy — overwrites whatever the agent may have emitted at these paths.
-    // Every project gets the SAME resources from the central resources/ folder.
-    // Array of [$source, $destination] pairs; a source may appear multiple times
-    // (e.g. rect-logo.* is copied to both assets/img/logo/ and the root-level
-    // website-logo.* used by sidebar widgets, RSS, and sitemaps).
-    $map = [
-        ["favicon.ico",     "assets/images/icons/favicon.ico"],
-        ["favicon.png",     "assets/images/icons/favicon.png"],
-        ["favicon.jpg",     "assets/images/icons/favicon.jpg"],
-        ["favicon.svg",     "assets/images/icons/favicon.svg"],
-        ["square-logo.png", "assets/img/logo/square-logo.png"],
-        ["square-logo.jpg", "assets/img/logo/square-logo.jpg"],
-        ["square-logo.svg", "assets/img/logo/square-logo.svg"],
-        ["rect-logo.png",   "assets/img/logo/rect-logo.png"],
-        ["rect-logo.jpg",   "assets/img/logo/rect-logo.jpg"],
-        ["rect-logo.svg",   "assets/img/logo/rect-logo.svg"],
-        ["rect-logo.png",   "website-logo.png"],
-        ["rect-logo.svg",   "website-logo.svg"],
-        ["error-404.jpg",   "error-404.jpg"],
-    ];
-    $n = 0;
-    foreach ($map as [$src, $dst]) {
-        $from = "$repoRoot/resources/$src";
-        $to   = "$outputDir/$dst";
-        if (!is_file($from)) continue;
-        @mkdir(dirname($to), 0775, true);
-        copy($from, $to);
-        $n++;
-    }
-    return $n;
-}
-
 // ============================================================================
 // Staged prompts (html-to-php)
 // ============================================================================
@@ -682,7 +646,7 @@ function build_user_prompt_scaffold(array $features, array $pageMap, array $inpu
     if ($projectName !== "") {
         $out .= "Project folder: $projectName\n";
         $out .= "REQUIRED in includes/database.php localhost branch:\n";
-        $out .= "  \$wiscoy_url = \"http://localhost/web-dev-automation/output/$projectName/\";\n";
+        $out .= "  \$wiscoy_url = \"http://localhost/web-dev-auto-v2/output/$projectName/\";\n";
         $out .= "  \$db_name    = \"web-dev-automation\";\n";
         $out .= "Do NOT copy the URL from any reference — use this project's folder name above.\n\n";
     }
@@ -705,8 +669,14 @@ function build_user_prompt_scaffold(array $features, array $pageMap, array $inpu
     $out .= "                       replace {{DOMAIN}} with the bare domain from features.yaml site.url;\n";
     $out .= "                       derive every RewriteRule from page_map.json — NOT from any reference\n";
     $out .= "                       project's routing table — then replace {{PAGE_REWRITES}} with them)\n";
-    $out .= "  - robots.txt\n";
-    $out .= "  - sitemap.xml (static index pointing at /sitemaps/*.php)\n";
+    $out .= "  - robots.txt  (use the robots.txt.tmpl snippet; replace {{PROD_URL}} with site.url;\n";
+    $out .= "                 list every sitemap/*.xml URL in the SITEMAPS section — use .xml extension\n";
+    $out .= "                 since sitemaps/.htaccess rewrites .xml to .php; include one line per\n";
+    $out .= "                 main_category from features.yaml plus the standard entries)\n";
+    $out .= "  - sitemap.xml (use the sitemap.xml.tmpl snippet — it is a static <urlset> of the main\n";
+    $out .= "                 static pages: home, about-us, contact-us, our-blogs.\n";
+    $out .= "                 CRITICAL: do NOT generate a <sitemapindex>. It is a <urlset>.)\n";
+    $out .= "  - blogs_on/.htaccess  (use blogs-on-htaccess.tmpl; replace {{DOMAIN}} with the bare domain)\n";
     $out .= "  - Redirect-stub index.php in EVERY non-public subfolder:\n";
     $out .= "      includes/index.php, functions/index.php, blogs_on/index.php, feed/index.php,\n";
     $out .= "      sitemaps/index.php, assets/index.php, and recursively for every subfolder\n";
@@ -814,9 +784,19 @@ function build_user_prompt_aggregates(array $features, array $pageMap): string {
         }
     }
     $out .= "  - Sitemaps under sitemaps/ — one PHP file per content slice:\n";
-    $out .= "      sitemaps/category.php, sitemaps/authors.php, and sitemaps/<slice>.php per the\n";
-    $out .= "      content slices implied by features.yaml (e.g. per-category sitemaps, paginated\n";
-    $out .= "      blog-1.php / blog-2.php as needed). All output application/xml.\n";
+    $out .= "      sitemaps/authors.php   — DISTINCT blog_author per tenant, emits /auth-<slug> URLs\n";
+    $out .= "      sitemaps/category.php  — DISTINCT blog_category per tenant, emits /cat-<slug> URLs\n";
+    $out .= "      sitemaps/blog-1.php    — first 1000 articles ordered DESC by blog_date, filtered\n";
+    $out .= "                               with \$myTopNiche and \$greyNiche from database.php\n";
+    $out .= "      sitemaps/blog-2.php    — next 1000 articles (LIMIT 1000, 1000), same filters\n";
+    $out .= "      Per-category sitemaps  — generate ONE file per category in site.main_categories\n";
+    $out .= "                               (e.g. sitemaps/business.php, sitemaps/technology.php).\n";
+    $out .= "                               Query: WHERE my_web_url=? AND blog_category='<cat>'\n";
+    $out .= "                               No LIMIT. Do NOT use \$myTopNiche/\$greyNiche here.\n";
+    $out .= "      All files emit application/xml; include('../includes/database.php'); no session_start.\n";
+    $out .= "  - sitemaps/.htaccess — use the sitemaps-htaccess.tmpl snippet; add one\n";
+    $out .= "      RewriteRule ^<name>\\.xml$ <name>.php [L] for EVERY .php file in the folder\n";
+    $out .= "      (authors, blog-1, blog-2, category, and every per-category file).\n";
     $out .= "  - feed/rss.php — application/rss+xml for the last N articles.\n\n";
     $out .= "Everything else (includes/*, functions/*, all per-page PHP files) is already generated\n";
     $out .= "and provided as a system context block. DO NOT regenerate or modify any of those files.\n\n";
@@ -873,6 +853,124 @@ function prompt_checkpoint(string $label): void {
         echo "Aborted by user.\n";
         exit(0);
     }
+}
+
+// ============================================================================
+// Per-page visual feedback (feedback loop)
+// ============================================================================
+
+// Run structural_diff.php for a single page label and return its result array,
+// or null if the script failed or produced no result for that label.
+// Compares input HTML against generated PHP section-by-section at the DOM level:
+// PHP include files are expanded inline and PHP tags are stripped before parsing,
+// so the full page (header, content, footer) is compared against the input HTML.
+function run_per_page_structural_check(string $repoRoot, string $projectName, string $label): ?array {
+    $script = escapeshellarg("$repoRoot/tests/structural_diff.php");
+    $cmd    = escapeshellarg(PHP_BINARY) . " $script " . escapeshellarg($projectName) . " --page " . escapeshellarg($label);
+    echo "  [structural check: $label]\n";
+    passthru($cmd);
+    $resultsPath = "$repoRoot/tests/structural_results.json";
+    if (!is_file($resultsPath)) return null;
+    $data = json_decode(file_get_contents($resultsPath), true);
+    if (!is_array($data) || !isset($data["pairs"])) return null;
+    foreach ($data["pairs"] as $pair) {
+        if (($pair["label"] ?? "") === $label) return $pair;
+    }
+    return null;
+}
+
+// Summarise the mismatch data for a single page result (from structural_diff.php)
+// into a human-readable string, shown at the checkpoint and embedded in the
+// rebuild prompt. Returns null when everything passed.
+function format_mismatch_summary(?array $pageResult): ?string {
+    if ($pageResult === null) return null;
+
+    $lines = [];
+    if ($pageResult["skipped"] ?? null) {
+        $lines[] = "Check skipped: " . $pageResult["skipped"];
+    }
+    if ($pageResult["warning"] ?? null) {
+        $lines[] = "Warning: " . $pageResult["warning"];
+    }
+    foreach ($pageResult["sections"] ?? [] as $sec) {
+        if ($sec["pass"] ?? true) continue;
+        $sl      = $sec["label"]     ?? "?";
+        $sig     = $sec["input_sig"] ?? "?";
+        $missing = $sec["missing"]   ?? [];
+        $lines[] = "Section '$sl' [$sig]: FAIL — " . count($missing) . " missing element(s)";
+        foreach (array_slice($missing, 0, 8) as $path) {
+            $lines[] = "    missing: $path";
+        }
+        if (count($missing) > 8) {
+            $lines[] = "    ... +" . (count($missing) - 8) . " more";
+        }
+    }
+
+    return empty($lines) ? null : implode("\n", $lines);
+}
+
+// Show a checkpoint that includes the visual result and returns the user's choice:
+//   "continue" — proceed to the next stage (even if there were failures)
+//   "rebuild"  — re-run this stage with mismatch context (only when $canRebuild)
+//   "quit"     — abort the run
+function prompt_checkpoint_visual(string $label, ?string $mismatchSummary, bool $canRebuild): string {
+    $hasFail = ($mismatchSummary !== null);
+    echo "\n--- Checkpoint: $label ---\n";
+    if ($hasFail) {
+        echo "Visual check FAILED:\n";
+        foreach (explode("\n", $mismatchSummary) as $line) echo "  $line\n";
+    } else {
+        echo "Visual check PASSED.\n";
+    }
+    if ($hasFail && $canRebuild) {
+        echo "Options: [Enter]=continue anyway  [r]=rebuild this page  [q]=quit: ";
+    } else {
+        echo "Options: [Enter]=continue  [q]=quit: ";
+    }
+    $answer = strtolower(trim((string)fgets(STDIN)));
+    if ($answer === "q" || $answer === "quit") { echo "Aborted by user.\n"; exit(0); }
+    if ($hasFail && $canRebuild && ($answer === "r" || $answer === "rebuild")) return "rebuild";
+    return "continue";
+}
+
+// Build the user prompt for rebuilding a single page after a visual mismatch.
+// Includes: mismatch report, current generated file contents, original input HTML,
+// and explicit permission to also fix scaffold includes/ if they caused the failure.
+function build_user_prompt_page_rebuild(
+    array $features, array $pair, array $inputTree,
+    int $index, int $total, string $mismatchSummary, array $currentFiles
+): string {
+    $before = (string)($pair["before"] ?? "");
+    $after  = (string)($pair["after"]  ?? "");
+    $label  = (string)($pair["label"]  ?? "");
+
+    $out  = "=== REBUILD Stage 2 of 3: Page '$label' ($index of $total) ===\n\n";
+    $out .= "The previous generation failed the structural check. Regenerate the file(s) needed to fix it.\n\n";
+    $out .= "--- Structural mismatch report ---\n$mismatchSummary\n\n";
+    $out .= "--- How to fix ---\n";
+    $out .= "1. Determine whether the missing elements are in $after itself or in a shared scaffold\n";
+    $out .= "   file (includes/header.php, includes/footer.php, includes/section-4.php, etc.).\n";
+    $out .= "2. Output ONLY the files that need changing. If a scaffold file needs fixing,\n";
+    $out .= "   include the corrected version — the orchestrator will overwrite the existing one.\n";
+    $out .= "3. The 'already generated' system context is for reference. The files listed in\n";
+    $out .= "   the mismatch report should be treated as needing correction, not as canonical.\n\n";
+    $out .= "--- Current generated files (what was just produced) ---\n";
+    $relevant = [$after, "includes/header.php", "includes/footer.php",
+                 "includes/section-4.php", "includes/head.php", "includes/side-bar.php"];
+    foreach ($relevant as $rel) {
+        if (isset($currentFiles[$rel])) {
+            $out .= "\n###### $rel (current — may need correction) ######\n{$currentFiles[$rel]}\n";
+        }
+    }
+    $beforeKey = str_replace("\\", "/", $before);
+    $html = $inputTree["text"][$beforeKey] ?? null;
+    if ($html !== null) {
+        $out .= "\n--- Input HTML ($before, minified) ---\n$html\n\n";
+    }
+    $out .= "--- features.yaml ---\n" . yaml_dump_minimal($features) . "\n";
+    $out .= "--- page_map entry ---\n" . json_encode($pair, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n\n";
+    $out .= "Respond with the JSON envelope only. Output only the files that need changing.";
+    return $out;
 }
 
 // ============================================================================

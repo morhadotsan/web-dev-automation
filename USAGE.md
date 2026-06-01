@@ -81,6 +81,19 @@ Lists every `*.html` in `input/<name>/` and the PHP target it should produce. Te
 
 **Every `*.html` file in the input must appear as a `before` somewhere in `pairs`.** If any is unmapped, the CLI refuses to run and lists which files are missing.
 
+**Optional: pin specific sections for visual comparison.** By default `visual_diff.js` auto-detects `<section>` elements and matches them by ID/class/position. If you want to target specific sections by CSS selector instead, add a `sections` array to any pair:
+
+```json
+{ "before": "index.html", "after": "index.php", "label": "home",
+  "sections": [
+    { "label": "hero",     "selector": ".hero-section" },
+    { "label": "trending", "selector": ".trending-section" }
+  ]
+}
+```
+
+Each entry takes a `label` (used in screenshot filenames) and a `selector` (applied to both input and output). Add `"output_selector"` if the class name differs between the two.
+
 ### 4. Run the CLI
 
 ```powershell
@@ -99,7 +112,7 @@ What it does, in order:
    - `--mode console` (default): pings `GET /v1/models` to verify `ANTHROPIC_API_KEY` works. Fails fast on bad/expired keys.
    - `--mode claude-code`: locates the `claude` CLI on PATH (checks common npm install paths too). Fails fast if not installed.
 8. **Confirmation:** prints a summary (project, task, site, features, page_map, references, snippets, backend, model, prompt size) and waits for `y`/`yes`. `--yes` skips this.
-9. Calls the chosen backend, parses the JSON envelope, writes files into `output/my-blog/`, runs the `asset_copies` from the agent's response, then **always copies every file from [resources/](resources/) into the standard project paths** — overwriting any conflicting agent output.
+9. Calls the chosen backend, parses the JSON envelope, writes files into `output/my-blog/`, and runs the `asset_copies` from the agent's response (logos, favicons, and other binary assets come from the input template via this mechanism).
 10. Runs `php tests/run_tests.php my-blog` and `node tests/visual_diff.js my-blog`. First visual-diff run captures golden snapshots into `references/<task>/my-blog/golden/`; subsequent runs diff against them.
 
 ## Choosing the backend (`--mode`)
@@ -131,21 +144,8 @@ The two modes produce the same output. `console` is the most reliable; `claude-c
 | `ANTHROPIC_MODEL` | `claude-sonnet-4-6` | Override the model without `--model`. |
 | `ANTHROPIC_MAX_TOKENS` | `16000` | Output token cap per API call. Raise for big projects. |
 | `WEBDEV_TEST_DB_*` | see [.env](.env) | Forwarded to `tests/run_tests.php`. |
-| `WEBDEV_BASE_URL` | _(derived)_ | Full HTTP URL to the project root, e.g. `http://localhost/web-dev-automation/output/my-blog`. Set this when the derived URL is wrong (Linux, custom DocumentRoot, etc.). Overrides `XAMPP_HTDOCS`. |
+| `WEBDEV_BASE_URL` | _(derived)_ | Full HTTP URL to the project root, e.g. `http://localhost/web-dev-auto-v2/output/my-blog`. Set this when the derived URL is wrong (Linux, custom DocumentRoot, etc.). Overrides `XAMPP_HTDOCS`. |
 | `XAMPP_HTDOCS` | `/opt/lampp/htdocs` (Linux) / `c:/xampp/htdocs` (Windows) | Filesystem path to Apache's htdocs directory. Used to derive the base URL when `WEBDEV_BASE_URL` is not set. |
-
-## Resources (always from `resources/`)
-
-Every project gets the **same** set of brand/template assets, copied from [resources/](resources/) into the project's canonical paths *after* the agent's files are written:
-
-```
-resources/favicon.{ico,png,jpg,svg}   -> assets/images/icons/favicon.{ico,png,jpg,svg}
-resources/square-logo.{png,jpg,svg}   -> assets/img/logo/square-logo.{png,jpg,svg}
-resources/rect-logo.{png,jpg,svg}     -> assets/img/logo/rect-logo.{png,jpg,svg}
-resources/error-404.jpg               -> error-404.jpg
-```
-
-The agent is instructed **not** to emit these — the orchestrator handles them. If you want custom favicons/logos across all projects, swap them in `resources/`.
 
 ## Output layout
 

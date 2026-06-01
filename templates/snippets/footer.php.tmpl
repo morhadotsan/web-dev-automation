@@ -1,29 +1,19 @@
-<?php
-// includes/footer.php — site footer: optional follow grid + copyright line.
-// Depends on globals from includes/database.php: $wiscoy_url, $shortTitle, $adm_*.
-?>
-<footer class="footer footer1">
-    <div class="footer-top">
-        <div class="container">
-            <div class="section-heading">
-                <h2 class="title">Follow Us</h2>
-            </div>
-            <div class="axil-social social-layout-1 size-large gap-12 justify-content-center">
-                <ul>
-                    <li class="facebook"><a href="<?= $adm_facebook; ?>" target="_blank" rel="nofollow" aria-label="Facebook"><i class="solid-facebook2"></i></a></li>
-                    <li class="instagram"><a href="<?= $adm_instagram; ?>" target="_blank" rel="nofollow" aria-label="Instagram"><i class="regular-instagram"></i></a></li>
-                    <li class="twitter"><a href="<?= $adm_twitter; ?>" target="_blank" rel="nofollow" aria-label="Twitter"><i class="regular-twitter"></i></a></li>
-                    <li class="linkedin"><a href="<?= $adm_linkedin; ?>" target="_blank" rel="nofollow" aria-label="LinkedIn"><i class="regular-linkedln"></i></a></li>
-                    <li class="whatsapp"><a href="<?= $adm_whatsapp; ?>" target="_blank" rel="nofollow" aria-label="WhatsApp"><i class="regular-whatsapp"></i></a></li>
-                    <li class="mail-fast"><a href="mailto:<?= $adm_email; ?>" rel="nofollow" aria-label="Email"><i class="regular-mail-fast"></i></a></li>
-                </ul>
-            </div>
-        </div>
-    </div>
+<!-- includes/footer.php — site footer.
+     IMPORTANT: The HTML structure here MUST be taken from the input template's footer
+     region. Only add PHP globals. Never synthesize elements (Follow-Us grids, social
+     icon rows, elaborate copyright blocks) not present in the input HTML.
 
-    <div class="footer-bottom">
-        <div class="footer-copyright">
-            <span class="copyright-text">© {{LAUNCH_YEAR}} - <script type="text/javascript">document.write(new Date().getFullYear())</script>, <a href="<?= $wiscoy_url; ?>" title="<?= $shortTitle; ?>" aria-label="footer copyright"><?= $shortTitle; ?></a> | All Rights Reserved.</span>
-        </div>
+     Globals available: $wiscoy_url, $shortTitle, $adm_facebook, $adm_twitter,
+                        $adm_instagram, $adm_linkedin, $adm_whatsapp, $adm_email.
+-->
+
+<!-- Adapt class names and structure from the input template's footer. -->
+<div class="{{FOOTER_CLASS}}">
+    <div class="{{COPYRIGHT_CLASS}}">
+        <?= $shortTitle; ?> &copy; <script type="text/javascript">document.write(new Date().getFullYear())</script>. All Rights Reserved.
     </div>
-</footer>
+    <!-- Back-to-top: href target must match the id of the input template's top-level wrapper. -->
+    <a href="#{{TOP_WRAPPER_ID}}" class="{{BACK_TO_TOP_CLASS}}">
+        <img src="<?= $wiscoy_url; ?>assets/images/back-top.png" loading="lazy" alt="Back to top" class="{{UP_ICON_CLASS}}" />
+    </a>
+</div>

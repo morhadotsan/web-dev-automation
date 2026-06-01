@@ -13,7 +13,7 @@ Pattern confidence prefixes:
 
 ## Page Boilerplate
 
-**[Emerging] (ny-mag-ag)** — Every public PHP page in the project root starts with this exact block, in this order:
+**[Emerging] (ny-mag-ag)** — Every public PHP page in the project root starts with this PHP block, in this order:
 
 ```php
 <?php
@@ -29,18 +29,29 @@ include("./functions/functions.php");
 //   $_nuRobotIndex1, $_nuRobotFollow1, $can_pageUrl, $_neuPgImg,
 //   $_neuPgArticleSection, $_neuPgUpdatedTime, $_neuPgReadingTime
 ?>
+```
+
+**CRITICAL — the HTML shell (everything after the PHP block) MUST be taken verbatim from the input template.** Do not invent HTML structure:
+
+- The `<html>` tag attributes (e.g. `lang`, `data-wf-*`) come from the input HTML. **Never add `class="no-js"` unless it is in the input.**
+- The `<body>` class comes from the input HTML. **Never use `class="mobilemenu-active"` unless the input has it.**
+- The outer wrapper `<div>` IDs and classes (e.g. `id="home"`, `class="w-layout-layout home-stack …"`) come from the input HTML. Do not replace them with `id="main-wrapper" class="main-wrapper"`.
+- `includes/preloader.php` is only included if the input template contains a preloader or back-to-top element.
+- The nesting of `header.php`, page content, and `footer.php` inside the body must mirror the input HTML's structure.
+
+Example (structure varies by project — preserve whatever the input HTML uses):
+
+```html
 <!DOCTYPE html>
-<html class="no-js" lang="en">
+<html lang="en">
 <head>
 <?php include("./includes/head.php"); ?>
 </head>
-<body class="mobilemenu-active">
-    <?php include("./includes/preloader.php"); ?>
-    <div id="main-wrapper" class="main-wrapper">
-        <?php include("./includes/header.php"); ?>
-        <!-- page-specific <section> blocks here -->
-        <?php include("./includes/footer.php"); ?>
-    </div>
+<body class="{{BODY_CLASS_FROM_INPUT}}">
+    <!-- exact outer wrapper div from the input HTML -->
+    <?php include("./includes/header.php"); ?>
+    <!-- page-specific <section> blocks here -->
+    <?php include("./includes/footer.php"); ?>
     <?php include("./includes/section-4.php"); ?>
 </body>
 </html>
@@ -68,6 +79,12 @@ include("./functions/functions.php");
 - **Single PDO handle `$con`** defined in `includes/database.php`. utf8mb4, `ATTR_ERRMODE = ERRMODE_EXCEPTION`, followed by `$con->exec("SET NAMES utf8mb4")`.
 - **Env-switched credentials** on `$_SERVER["SERVER_NAME"] === "localhost"`. Production credentials inline in the file (no `.env` in the deliverable).
 - **Localhost DB name is the literal `"web-dev-automation"`**, not a per-project name. This is the canonical test database that `tests/run_tests.php` drops, recreates, and seeds from `tests/fixtures/reverbtime.sql` + `seed.sql` on every run. Keep it verbatim in every generated `database.php` so the project is testable out of the box without manual edits.
+- **`$reverbURL`** is defined immediately after the env-switch block and **before** the PDO try/catch. It is always `"https://www.reverbtimemag.com/"` — the shared cross-site image host for all projects. Never move it inside the if/else.
+- **Social media URL construction** — derive from `site.website_slug` in features.yaml. Pattern: `$adm_facebook = "https://www.facebook.com/<website_slug>"`, `$adm_instagram = "https://www.instagram.com/<website_slug>"`, etc. Do not leave generic platform roots without the slug.
+- **`$adm_email`** — set to `"admin@<bare_domain>"` where the bare domain is the domain part of `site.url` (e.g. `site.url = "https://www.example.com/"` → `"admin@example.com"`).
+- **`$adm_keywords`** — build from `site.main_categories` joined with `", "`, then append `", magazine, blog, articles"`. Example: categories `[business, technology, lifestyle]` → `"business, technology, lifestyle, magazine, blog, articles"`.
+- **`$myTopNiche`** — SQL fragment that excludes the site's own main categories from "trending/top" queries. Build from ALL `site.main_categories` in features.yaml: `"AND \`blog_category\` NOT IN ('<cat1>', '<cat2>', ...)"`. This prevents the home page trending bar from looping only over the site's own content.
+- **`$greyNiche`** — standard grey-area exclusion list, identical for every project: `"AND \`blog_category\` NOT IN ('cbd', 'casino', 'vape', 'essay-writing', 'relationship', 'beverage')"`. Always include it; never leave it as an empty string.
 - **Multi-tenant filter** — every `blog`/`blog_views` query carries `WHERE my_web_url = ?` bound to the site slug global. Never query the blog table without it.
 - **Positional `?` placeholders only** — `$stmt = $con->prepare("… ?"); $stmt->execute([$param]);`. No named placeholders.
 - **Fetch idioms**:
@@ -118,6 +135,64 @@ Rewrite rules (canonical clean-URL → file map):
 
 **[Emerging] (ny-mag-ag)** — all not-found outcomes use `header("Location: ./404-page"); exit();` (or `../404-page` from subfolders). Never `http_response_code(404)`.
 
+**[Emerging] (ny-mag-ag)** — subdirectory `.htaccess` files for `blogs_on/` and `sitemaps/`. These are **additional** `.htaccess` files inside those subdirectories; they complement but do not replace the root `.htaccess`.
+
+- **`blogs_on/.htaccess`** — enables routing for the single-article subdirectory. Contents: commented-out www-redirect rule, trailing-slash strip → 301 using the full prod URL, the six security headers, `Options All -Indexes`, method block (405), `<Files .htaccess> Deny from all </Files>`, then the main rewrite rule `RewriteRule ^([a-z0-9-/]+)$ blog_details.php?blog_url=$1 [L]`, and `ErrorDocument` entries pointing at `../404-page`. Use the `blogs-on-htaccess.tmpl` snippet; replace `{{DOMAIN}}` with the bare domain from `site.url`.
+- **`sitemaps/.htaccess`** — rewrites clean `.xml` URL aliases to the corresponding `.php` sitemap files so robots.txt can reference `.xml` URLs. One `RewriteRule ^<name>\.xml$ <name>.php [L]` per sitemap file in the folder (authors, blog-1, blog-2, category, plus one per `main_category`). Use the `sitemaps-htaccess.tmpl` snippet.
+
+## Static Files: robots.txt and sitemap.xml
+
+**[Emerging] (ny-mag-ag)** — both files are generated during Stage 1 (scaffolding) and are always included in the deliverable.
+
+### robots.txt
+
+Use the `robots.txt.tmpl` snippet as the skeleton. Key rules:
+- Global `User-agent: *` block at the top — `Allow: /`, `Disallow: /cgi-bin/`, `Disallow: /functions/`, `Disallow: /includes/`.
+- Named sections for: search engines, AI crawlers, SEO tools (all `Allow: /`), blocked bots (all `Disallow: /`).
+- Final `# === SITEMAPS ===` section listing every sitemap URL with `.xml` extension (because `sitemaps/.htaccess` rewrites `.xml` → `.php`). Always include:
+  - `Sitemap: <prod_url>feed/rss`
+  - `Sitemap: <prod_url>sitemap.xml`
+  - `Sitemap: <prod_url>sitemaps/authors.xml`
+  - `Sitemap: <prod_url>sitemaps/blog-1.xml`
+  - `Sitemap: <prod_url>sitemaps/blog-2.xml`
+  - One `Sitemap: <prod_url>sitemaps/<category>.xml` per `main_category` from features.yaml
+  - `Sitemap: <prod_url>sitemaps/category.xml`
+
+### sitemap.xml
+
+**CRITICAL**: `sitemap.xml` is a **static `<urlset>`** containing the site's main static pages. It is **NOT** a `<sitemapindex>` pointing to sub-sitemaps. Use the `sitemap.xml.tmpl` snippet. Replace `{{PROD_URL}}` with the production URL from `site.url`. Replace `{{LASTMOD_DATE}}` with a recent ISO-8601 datetime (e.g. `2022-06-22T13:07:41+01:00`). Include exactly these four pages: home (`/`), about-us, contact-us, our-blogs. The dynamic blog content is covered by the per-slice sitemaps in `sitemaps/`.
+
+## Sitemaps (sitemaps/)
+
+**[Emerging] (ny-mag-ag)** — one PHP file per content slice, all emitting `application/xml` output. Generated during Stage 3 (aggregates).
+
+### Standard files (every project)
+
+- **`sitemaps/authors.php`** — `SELECT DISTINCT blog_author, MAX(blog_date) as last_date FROM blog WHERE my_web_url = ? GROUP BY blog_author ORDER BY last_date DESC`. Emits `/auth-<slug>` URLs.
+- **`sitemaps/category.php`** — `SELECT DISTINCT blog_category, MAX(blog_date) as last_date FROM blog WHERE my_web_url = ? GROUP BY blog_category ORDER BY last_date DESC`. Emits `/cat-<category>` URLs.
+- **`sitemaps/blog-1.php`** — first 1,000 articles (LIMIT 0, 1000) ordered `DESC` by `blog_date`, filtered by `$myTopNiche` and `$greyNiche`. Emits `/blogs_on/<slug>` URLs. If the site has >1,000 articles use `blog-2.php` with LIMIT 1000, 1000, etc.
+- **`sitemaps/blog-2.php`** — second 1,000 articles (LIMIT 1000, 1000), same filters as blog-1.php.
+
+### Per-category files (one per main_category)
+
+For each category in `site.main_categories` from features.yaml, generate `sitemaps/<category>.php`. Query:
+```php
+SELECT `url_slug`, `blog_date` FROM `blog` WHERE `my_web_url` = ? AND `blog_category` = '<category>' ORDER BY `blog_date` DESC
+```
+No LIMIT (all articles for that category). Emits `/blogs_on/<slug>` URLs with `changefreq=monthly, priority=0.7`.
+
+### Query conventions for sitemaps
+
+- Always include `header('Content-Type: application/xml; charset=utf-8');` at the top.
+- Always include `include('../includes/database.php');` (no session_start needed for XML output).
+- **Use `$myTopNiche` and `$greyNiche`** in `blog-1.php` and `blog-2.php` queries to maintain consistency with page queries. Per-category files do NOT use these fragments (they already filter by category).
+- Use `htmlspecialchars()` on all URL values.
+- `<lastmod>` uses `date('Y-m-d', strtotime($row['blog_date']))`.
+
+### sitemaps/.htaccess
+
+Must be generated alongside the sitemap PHP files (Stage 3). One `RewriteRule ^<name>\.xml$ <name>.php [L]` per sitemap file. Use the `sitemaps-htaccess.tmpl` snippet and add one line per `main_category`.
+
 ## Page Meta & SEO
 
 **[Emerging] (ny-mag-ag)** — two coexisting strategies; `includes/head.php` picks whichever is in scope:
@@ -137,16 +212,16 @@ These are not optional; synthesized meta + schema is part of the deliverable.
 
 ## Shared Includes
 
-**[Emerging] (ny-mag-ag)** — fixed include order inside `<body>`:
+**[Emerging] (ny-mag-ag)** — standard includes and their roles:
 
-1. `includes/preloader.php` — first thing inside `<body>` (it's the back-to-top anchor, despite the name).
-2. `includes/header.php` — top trending bar (queries N random blogs), logo, nav, search trigger. Depends on `$con`, site-slug global, site URL, brand title.
-3. (page-specific `<section>` markup)
-4. `includes/footer.php` — "Follow Us" tile grid + copyright. Depends on social handles and brand globals.
+1. `includes/preloader.php` — only included if the input template has a preloader or back-to-top anchor element. **Do not include it by default.**
+2. `includes/header.php` — the site's nav region (top bar + navbar, or left sidebar menu, etc.). The HTML structure inside this file comes from the input template's nav region. **header.php may include its own outer wrapper div** (e.g. `<div class="w-layout-cell left-side-menu">`) — if the input template's nav is wrapped in a container div, that wrapper belongs inside `header.php`, not added again in the page file. Never add elements (newsletter forms, search bars, trending strips) that are not in the input HTML.
+3. (page-specific markup)
+4. `includes/footer.php` — the site's footer region. Content comes from the input template's footer. **Do not add a "Follow Us" grid or elaborate social icon section unless the input HTML has one.** Copyright line format and back-to-top href must match the input.
 
-After the main wrapper closes (sibling of header/footer, not child):
+After the page content (sibling of the outer wrapper, or just before `</body>` — match the input HTML):
 
-5. `includes/section-4.php` — search modal markup + **every** `<script>` tag in load order. Pages never load scripts inline.
+5. `includes/section-4.php` — **every** `<script>` tag in load order. Pages never load scripts inline. Include only the JS files that exist in the input template. If the input ships `webfont.js`, include a `WebFont.load()` call with the font families the input template loads. **Do not add a search modal or other UI components not present in the input HTML.**
 
 Inside `<head>`:
 
@@ -154,8 +229,8 @@ Inside `<head>`:
 
 Page-specific fragments:
 
-- `includes/section-1.php` / `section-2.php` / `section-3.php` — home-only sections; included between header and footer in `index.php`.
-- `includes/side-bar.php` — included in a `col-lg-4` next to a `col-lg-8` content column on archive and detail pages.
+- `includes/section-1.php` / `section-2.php` / `section-3.php` — home-only sections; included between header and footer in `index.php` when the input has corresponding home-only regions.
+- `includes/side-bar.php` — included in a sidebar column on archive and detail pages when the input template has a sidebar.
 
 Path style: root pages use `./includes/…`; subfolder pages use `../includes/…`.
 
@@ -207,27 +282,44 @@ Plus a project-side helper in `database.php`:
 
 **[Emerging] (ny-mag-ag)** — reorganization from the input template:
 
-- **Reorganize `assets/media/` (input)** into `assets/images/icons/` (favicons) and `assets/img/{logo,other}/` (logos + chrome).
 - **CSS and JS keep original names and paths**: `assets/css/{app.css, fonts/icomoon.css, vendor/…}`, `assets/js/{app.js, vendor/…, sweetalert.min.js}`.
-- **Cross-site image hosting** for content images — blog and user images live on a sibling site (e.g. `$reverbURL.reverb_images/blog_images/<file>`), not inside this project's `assets/`. The local `assets/img/` is only for logos and template chrome.
-- **Standardized logo + favicon paths** — the orchestrator copies `resources/` to these exact destinations after each stage. Generated PHP MUST reference only these paths (never the input-template's original logo filenames):
+- **Blog and article images are cross-hosted** — they live on a sibling server and MUST be loaded via `$reverbURL` using the lazy-load pattern. Never reference blog images through `$wiscoy_url` or a local `assets/` path; those files are not on this server and will never load.
 
-  | Resource         | Destination in output                      | Usage                                      |
-  |------------------|--------------------------------------------|--------------------------------------------|
-  | `favicon.ico`    | `assets/images/icons/favicon.ico`          | `<link rel="shortcut icon">`               |
-  | `favicon.png`    | `assets/images/icons/favicon.png`          | `<link rel="shortcut icon">`               |
-  | `favicon.jpg`    | `assets/images/icons/favicon.jpg`          | OG/Twitter image fallback                  |
-  | `favicon.svg`    | `assets/images/icons/favicon.svg`          | `<link rel="apple-touch-icon">`            |
-  | `rect-logo.svg`  | `assets/img/logo/rect-logo.svg`            | Desktop header logo                        |
-  | `rect-logo.png`  | `assets/img/logo/rect-logo.png`            | Desktop header logo (PNG fallback)         |
-  | `square-logo.svg`| `assets/img/logo/square-logo.svg`          | Mobile header logo                         |
-  | `square-logo.png`| `assets/img/logo/square-logo.png`          | Mobile header logo (PNG fallback)          |
-  | `rect-logo.svg`  | `website-logo.svg` (project root)          | Sidebar widget, RSS, sitemaps              |
-  | `rect-logo.png`  | `website-logo.png` (project root)          | Sidebar widget, RSS, sitemaps (PNG)        |
-  | `error-404.jpg`  | `error-404.jpg` (project root)             | 404 page image                             |
+  ```php
+  <img alt="<?= htmlspecialchars($b_title); ?>"
+       class="lzImg2"
+       src="<?= $reverbURL."reverb_images/blog_images/lazy-img.png"; ?>"
+       data-src="<?= $reverbURL."reverb_images/blog_images/".$b_img; ?>" />
+  ```
 
-  The agent must NOT include any of these in `files` or `asset_copies` — the orchestrator overwrites them regardless.
+  `$wiscoy_url."assets/…"` is only for the site's own chrome assets (logos, icons, template images).
+
+- **Alt text must never be empty** — every `<img>` tag must carry a meaningful `alt` attribute. Use `htmlspecialchars($b_title)` for blog cards, author name for author photos, or a descriptive fallback. `alt=""` is forbidden.
+- **Logos and favicons come from the input template** — copy them as-is from the input via `asset_copies`. Preserve whatever paths the input template uses; do not rename or relocate them.
 
 ## Common Mistakes
 
-_Empty — no manual corrections have been aggregated yet. Once derivative projects produce corrections in their `NOTES.md` under "Manual corrections applied", `update_references.php` will aggregate them here._
+**[Emerging] (test-dev-one)** — manual corrections applied after first generation:
+
+- **Adding `class="no-js"` to `<html>`** when the input template doesn't have it. Always take `<html>` attributes from the input HTML verbatim.
+
+- **Adding `class="mobilemenu-active"` (or any other class) to `<body>`** when the input template uses a different class (e.g. `class="body"`). The `<body>` class is not fixed — read it from the input.
+
+- **Including `preloader.php` unconditionally.** Only include it if the input template has a preloader or back-to-top anchor. Many templates do not.
+
+- **Wrapping `<?php include("./includes/header.php"); ?>` in an extra container div** (e.g. `<div class="w-layout-cell left-side-menu">`) in the page file, when that wrapper is already part of the input template's nav region and therefore belongs *inside* `header.php` itself. The page file should include header.php directly; if the input HTML wraps the nav in a container, that container is output by header.php.
+
+- **Adding a newsletter form to `header.php`** when the input HTML's nav region has no newsletter form. Only emit elements that are present in the input.
+
+- **Adding a search modal to `section-4.php`** when the input HTML has no search modal. The search modal in `section-4.php.tmpl` was ny-mag-ag-specific. Only add it if the input template has one.
+
+- **Using the Bootstrap blog card pattern in `renderBlogCard`** (column divs, `assets/img/blog/` image paths, no lazy load). The correct pattern for all projects is the `lzImg2` lazy-load with `$reverbURL`:
+  ```php
+  <img alt="..." class="lzImg2 {{IMAGE_CLASS}}"
+       src="<?= $reverbURL."reverb_images/blog_images/lazy-img.png"; ?>"
+       data-src="<?= $reverbURL."reverb_images/blog_images/".$img; ?>" />
+  ```
+
+- **Using `id="main-wrapper"` and `class="main-wrapper"` on the outer body div** when the input HTML uses different IDs/classes. Always take wrapper IDs and classes from the input template.
+
+- **Omitting the `WebFont.load()` call** when the input template ships `webfont.js`. If `webfont.js` is in the input's JS folder, include the `WebFont.load({ google: { families: [...] } })` script in `section-4.php` with the font families the input template references.

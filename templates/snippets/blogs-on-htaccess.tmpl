@@ -1,0 +1,38 @@
+<IfModule mod_rewrite.c>
+
+RewriteEngine On
+#RewriteCond %{HTTP_HOST} !^www\.(.*)$ [NC]
+#RewriteRule ^(.*)$ https://www.{{DOMAIN}}/blogs_on/$1 [L,R=301]
+
+# Strip trailing slash
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)/$ https://www.{{DOMAIN}}/blogs_on/$1 [L,R=301]
+
+Header set X-XSS-Protection "1; mode=block"
+Header always set X-Frame-Options "SAMEORIGIN"
+Header set X-Content-Type-Options nosniff
+Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains"
+Header set Referrer-Policy "same-origin"
+Header set Feature-Policy "geolocation 'self'; vibrate 'none'"
+
+# Disable Directory Browsing: Security
+Options All -Indexes
+
+RewriteCond %{REQUEST_METHOD} !^(GET|POST|HEAD)
+RewriteRule .* - [R=405,L]
+
+# Deny access to .htaccess
+<Files .htaccess>
+Order allow,deny
+Deny from all
+</Files>
+
+RewriteRule ^([a-z0-9-/]+)$ blog_details.php?blog_url=$1 [L]
+
+ErrorDocument 400 ../404-page
+ErrorDocument 401 ../404-page
+ErrorDocument 403 ../404-page
+ErrorDocument 404 ../404-page
+ErrorDocument 500 ../404-page
+
+</IfModule>

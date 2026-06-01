@@ -78,13 +78,11 @@ function truncate($s, $max){
     return strlen($s) > $max ? substr($s, 0, strrpos(substr($s, 0, $max), ' ')).'..' : $s;
 }
 
-// Standard 3-col Bootstrap article card. Used wherever a blog teaser appears
-// (archives, search results, author pages). $row is a `blog` row from PDO::FETCH_ASSOC.
+// Standard blog card renderer. $row is a `blog` row from PDO::FETCH_ASSOC.
+// Blog images are ALWAYS cross-hosted on $reverbURL — never use $wiscoy_url for them.
+// Adapt the outer wrapper classes and card structure to the input template's card HTML.
 function renderBlogCard($row, $titleMax = 60){
-    global $wiscoy_url;
-    // If blog images are cross-host (e.g. another sibling site), use that here:
-    // global $imageHostURL;  $imgBase = $imageHostURL."blog_images/";
-    $imgBase = $wiscoy_url."assets/img/blog/";
+    global $wiscoy_url, $reverbURL;
 
     $titleFull = $row["blog_title"];
     $title     = truncate($titleFull, $titleMax);
@@ -95,24 +93,26 @@ function renderBlogCard($row, $titleMax = 60){
     $authh     = $row["blog_author"];
     $auth      = ucwords(str_replace("-"," ",$authh));
     $date      = date("M d, Y", strtotime($row["blog_date"]));
+    $shortDesc = isset($row["blog_shortDesc"]) ? truncate($row["blog_shortDesc"], 120) : "";
 
     echo "
-        <div class='col-xl-4 col-md-6 col-12'>
-            <div class='post-box-layout18 radius-default padding-20'>
-                <div class='figure-holder radius-default'>
-                    <a href='".$wiscoy_url."blogs_on/".$url."' class='link-wrap img-height-100' aria-label='link'>
-                        <img width='660' height='470' src='".$imgBase.$img."' alt='".$titleFull."' />
-                    </a>
-                </div>
-                <div class='content-holder'>
-                    <div class='entry-category'><ul><li><a href='".$wiscoy_url."cat-".$catURL."'>".$cat."</a></li></ul></div>
-                    <h2 class='entry-title'><a href='".$wiscoy_url."blogs_on/".$url."'>".$title."</a></h2>
-                    <ul class='entry-meta'>
-                        <li><a href='".$wiscoy_url."auth-".$authh."'>".$auth."</a></li>
-                        <li>".$date."</li>
-                    </ul>
-                    <a href='".$wiscoy_url."blogs_on/".$url."' class='btn-text'>Read More</a>
-                </div>
+        <div class='{{CARD_WRAPPER_CLASS}}'>
+            <div class='{{CARD_META_CLASS}}'>
+                <a href='".$wiscoy_url."cat-".$catURL."' class='{{CAT_LINK_CLASS}}'>
+                    <div class='{{CAT_TEXT_CLASS}}'>".$cat."</div>
+                </a>
+                <div class='{{DATE_CLASS}}'>".$date."</div>
+            </div>
+            <div class='{{CARD_INNER_CLASS}}'>
+                <a href='".$wiscoy_url."blogs_on/".$url."' class='{{IMAGE_LINK_CLASS}}'>
+                    <img alt='".htmlspecialchars($titleFull)."'
+                         class='lzImg2 {{IMAGE_CLASS}}'
+                         src='".$reverbURL."reverb_images/blog_images/lazy-img.png'
+                         data-src='".$reverbURL."reverb_images/blog_images/".$img."' />
+                </a>
+                <a href='".$wiscoy_url."blogs_on/".$url."' class='{{TITLE_LINK_CLASS}}'>
+                    <div class='{{TITLE_CLASS}}'>".$title."</div>
+                </a>
             </div>
         </div>
     ";

@@ -26,10 +26,13 @@ require_once __DIR__ . "/functions.php";
 // --- args -------------------------------------------------------------------
 
 if ($argc < 2) {
-    fwrite(STDERR, "usage: php tests/run_tests.php <project-name>\n");
+    fwrite(STDERR, "usage: php tests/run_tests.php <project-name> [--setup-db-only]\n");
     exit(2);
 }
 $projectName = $argv[1];
+// --setup-db-only: drop/recreate/seed the DB then exit. Used by create_project.php
+// after Stage 1 so the DB is ready for per-page visual checks before HTTP tests run.
+$setupDbOnly = in_array("--setup-db-only", $argv);
 
 $repoRoot   = realpath(__DIR__ . "/..");
 $testsDir   = __DIR__;
@@ -87,11 +90,11 @@ $dbName = getenv("WEBDEV_TEST_DB_NAME") ?: "web-dev-automation";
 //
 // Three ways to configure (resolution order):
 //   1. WEBDEV_BASE_URL — full project URL, e.g.
-//        WEBDEV_BASE_URL=http://localhost/web-dev-automation/output/test-dev-one
+//        WEBDEV_BASE_URL=http://localhost/web-dev-auto-v2/output/test-dev-one
 //   2. WEBDEV_REPO_URL — URL that maps to the repo root; the project path is
 //      made repo-relative and appended. Works across symlinks and non-XAMPP
 //      servers. Recommended for Linux / non-standard htdocs setups:
-//        WEBDEV_REPO_URL=http://localhost/web-dev-automation
+//        WEBDEV_REPO_URL=http://localhost/web-dev-auto-v2
 //   3. XAMPP_HTDOCS — filesystem path to htdocs; URL derived by checking that
 //      the project path starts with htdocs. Defaults to the platform standard
 //      (/opt/lampp/htdocs on Linux, c:/xampp/htdocs on Windows).
@@ -166,6 +169,11 @@ try {
 } catch (Throwable $e) {
     record($results, "db.seed_loaded", false, $e->getMessage());
     emit_and_exit($results, 1);
+}
+
+if ($setupDbOnly) {
+    echo "DB setup complete (--setup-db-only). Skipping HTTP page checks.\n";
+    emit_and_exit($results, 0);
 }
 
 // --- Page health checks: HTTP 200 + no PHP error tokens ---------------------

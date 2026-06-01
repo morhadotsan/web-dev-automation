@@ -22,9 +22,8 @@
  *          pair with a non-empty `before` (Stage 2), then aggregates (Stage 3).
  *          Pauses for manual inspection after EVERY call unless --yes is set.
  *        - mysqli-to-pdo: legacy one-shot prompt.
- *   10. Write files to output/<name>/, run asset_copies as each stage returns,
- *       then ALWAYS copy resources/ at the very end.
- *   11. Invoke tests/run_tests.php and tests/visual_diff.js.
+ *   10. Write files to output/<name>/, run asset_copies as each stage returns.
+ *   11. Invoke tests/run_tests.php and tests/structural_diff.php.
  *
  * Inputs:
  *   - .env                              -> ANTHROPIC_API_KEY (required for console mode)
@@ -237,54 +236,121 @@ if ($taskType === "html-to-php") {
     // Staged: run each stage as its own backend call. Stages 2 and 3 receive
     // the actually-written stage-1 files as a cached system block so the model
     // matches the canonical include paths and globals instead of drifting.
-    $stageCount = count($stages);
-    $pageCount  = 0;
+    //
+    // Feedback loop (Stage 2 pages only):
+    //   After each page is written, structural_diff.php runs for that page.
+    //   The user sees pass/fail and can choose: continue | rebuild | quit.
+    //   Rebuild re-calls Claude with the mismatch report + current file contents,
+    //   allowing the agent to also fix shared scaffold files if they caused the gap.
+    $stageCount      = count($stages);
+    $pageCount       = 0;
+    $maxRebuildTries = 3;
     foreach ($stages as $s) if ($s["kind"] === "page") $pageCount++;
+
+    // After Stage 1 (scaffold), seed the DB so visual checks can render PHP pages.
+    $dbSeeded = false;
 
     $pageIndex = 0;
     foreach ($stages as $i => $stage) {
-        $stageNum = $i + 1;
-        echo "\n=== Stage $stageNum/$stageCount: {$stage['label']} ===\n";
+        $stageNum     = $i + 1;
+        $rebuildCount = 0;
+        $prevMismatch = null;
+        // For page stages, fix the page index before the rebuild loop so it
+        // does not re-increment on rebuild iterations.
+        if ($stage["kind"] === "page") $pageIndex++;
+        $stagePageIndex = $pageIndex;
 
-        if ($stage["kind"] === "scaffold") {
-            $stageUserPrompt    = build_user_prompt_scaffold($inputFeatures, $pageMap, $inputTree, $projectName);
-            $stageSystemBlocks  = $systemBlocks;
-        } elseif ($stage["kind"] === "page") {
-            $pageIndex++;
-            $stageUserPrompt   = build_user_prompt_page($inputFeatures, $stage["pair"], $inputTree, $pageIndex, $pageCount);
-            $stageSystemBlocks = append_generated_block($systemBlocks, read_generated_output($outputDir));
-        } else { // aggregates
-            $stageUserPrompt   = build_user_prompt_aggregates($inputFeatures, $pageMap);
-            $stageSystemBlocks = append_generated_block($systemBlocks, read_generated_output($outputDir));
-        }
+        while (true) { // rebuild loop — break on continue/quit, repeat on rebuild
+            $isRebuild = ($rebuildCount > 0);
+            echo "\n=== Stage $stageNum/$stageCount: {$stage['label']}" . ($isRebuild ? " [REBUILD #$rebuildCount]" : "") . " ===\n";
 
-        echo "Calling $model via {$opts['mode']} ...\n";
-        $started = microtime(true);
-        [$rawResponse, $usage] = $opts["mode"] === "console"
-            ? call_anthropic_api($apiKey, $model, $stageSystemBlocks, $stageUserPrompt, $maxToks)
-            : call_via_claude_cli($claudeBin, $model, $stageSystemBlocks, $stageUserPrompt);
-        $elapsed = microtime(true) - $started;
-        echo sprintf("  -> %d output chars in %.1fs\n", strlen($rawResponse), $elapsed);
-        if ($usage) echo "  -> usage: in={$usage['input_tokens']}, out={$usage['output_tokens']}, cache_read={$usage['cache_read_input_tokens']}, cache_create={$usage['cache_creation_input_tokens']}\n";
+            if ($stage["kind"] === "scaffold") {
+                $stageUserPrompt   = build_user_prompt_scaffold($inputFeatures, $pageMap, $inputTree, $projectName);
+                $stageSystemBlocks = $systemBlocks;
+            } elseif ($stage["kind"] === "page") {
+                if ($isRebuild && $prevMismatch !== null) {
+                    $stageUserPrompt = build_user_prompt_page_rebuild(
+                        $inputFeatures, $stage["pair"], $inputTree,
+                        $stagePageIndex, $pageCount, $prevMismatch,
+                        read_generated_output($outputDir)
+                    );
+                } else {
+                    $stageUserPrompt = build_user_prompt_page($inputFeatures, $stage["pair"], $inputTree, $stagePageIndex, $pageCount);
+                }
+                $stageSystemBlocks = append_generated_block($systemBlocks, read_generated_output($outputDir));
+            } else { // aggregates
+                $stageUserPrompt   = build_user_prompt_aggregates($inputFeatures, $pageMap);
+                $stageSystemBlocks = append_generated_block($systemBlocks, read_generated_output($outputDir));
+            }
 
-        $payload = extract_json_payload($rawResponse);
-        if (!$payload || !isset($payload["files"]) || !is_array($payload["files"])) {
-            fwrite(STDERR, "error: stage $stageNum response had no usable 'files' field.\n");
-            file_put_contents("$repoRoot/.last-response.txt", $rawResponse);
-            fwrite(STDERR, "       Raw response written to .last-response.txt for inspection.\n");
-            exit(1);
-        }
-        $written = write_generated_files($outputDir, $payload["files"]);
-        $assets  = copy_input_assets($inputDir, $outputDir, $payload["asset_copies"] ?? []);
-        $totalWritten += $written;
-        $totalAssets  += $assets;
-        echo "  -> Wrote $written file(s), $assets input asset(s).\n";
+            echo "Calling $model via {$opts['mode']} ...\n";
+            $started = microtime(true);
+            [$rawResponse, $usage] = $opts["mode"] === "console"
+                ? call_anthropic_api($apiKey, $model, $stageSystemBlocks, $stageUserPrompt, $maxToks)
+                : call_via_claude_cli($claudeBin, $model, $stageSystemBlocks, $stageUserPrompt);
+            $elapsed = microtime(true) - $started;
+            echo sprintf("  -> %d output chars in %.1fs\n", strlen($rawResponse), $elapsed);
+            if ($usage) echo "  -> usage: in={$usage['input_tokens']}, out={$usage['output_tokens']}, cache_read={$usage['cache_read_input_tokens']}, cache_create={$usage['cache_creation_input_tokens']}\n";
 
-        if (!$opts["yes"]) prompt_checkpoint("Stage $stageNum complete — {$stage['label']}");
+            $payload = extract_json_payload($rawResponse);
+            if (!$payload || !isset($payload["files"]) || !is_array($payload["files"])) {
+                fwrite(STDERR, "error: stage $stageNum response had no usable 'files' field.\n");
+                file_put_contents("$repoRoot/.last-response.txt", $rawResponse);
+                fwrite(STDERR, "       Raw response written to .last-response.txt for inspection.\n");
+                exit(1);
+            }
+            $written = write_generated_files($outputDir, $payload["files"]);
+            $assets  = copy_input_assets($inputDir, $outputDir, $payload["asset_copies"] ?? []);
+            $totalWritten += $written;
+            $totalAssets  += $assets;
+            echo "  -> Wrote $written file(s), $assets input asset(s).\n";
+
+            // After scaffold: seed the DB so subsequent pages can render for include expansion.
+            if ($stage["kind"] === "scaffold" && !$dbSeeded) {
+                echo "\nSeeding test DB for per-page visual checks...\n";
+                run_php_script("$repoRoot/tests/run_tests.php", [$projectName, "--setup-db-only"]);
+                $dbSeeded = true;
+            }
+
+            // Per-page structural check (Stage 2 pages). Auto-advance when the
+            // check passes; only pause for input (continue / rebuild / quit) when
+            // it FAILS. This keeps a clean run hands-off and reserves the prompt
+            // for the cases that actually need a decision.
+            if ($stage["kind"] === "page") {
+                $pageLabel    = $stage["pair"]["label"] ?? "page-$stagePageIndex";
+                $pageResult   = run_per_page_structural_check($repoRoot, $projectName, $pageLabel);
+                $prevMismatch = format_mismatch_summary($pageResult);
+
+                if ($prevMismatch !== null) {
+                    if (!$opts["yes"]) {
+                        $canRebuild = ($rebuildCount < $maxRebuildTries);
+                        $action = prompt_checkpoint_visual(
+                            "Stage $stageNum: {$stage['label']}",
+                            $prevMismatch,
+                            $canRebuild
+                        );
+                        if ($action === "rebuild") { $rebuildCount++; continue; }
+                        // "continue" or "quit" (quit already called exit inside the function)
+                    } else {
+                        echo "  structural check reported mismatches (continuing: --yes).\n";
+                    }
+                } else {
+                    echo "  structural check passed — advancing to next stage.\n";
+                }
+                break;
+            }
+
+            // Scaffold (Stage 1): manual inspection gate before the page-by-page
+            // work begins. Aggregates (Stage 3): nothing to structurally check, so
+            // advance automatically — the end-of-run test pass is the gate there.
+            if ($stage["kind"] === "scaffold" && !$opts["yes"]) {
+                prompt_checkpoint("Stage $stageNum complete — {$stage['label']}");
+            }
+            break;
+        } // end rebuild loop
     }
 
-    $resources = copy_project_resources($repoRoot, $outputDir);
-    echo "\nOutput    : $totalWritten file(s) written across $stageCount stages, $totalAssets input asset(s), $resources resource(s) from resources/\n";
+    echo "\nOutput    : $totalWritten file(s) written across $stageCount stages, $totalAssets input asset(s)\n";
 
 } else {
     // Legacy one-shot (mysqli-to-pdo). No staged skill exists for this type yet.
@@ -306,8 +372,7 @@ if ($taskType === "html-to-php") {
     }
     $totalWritten = write_generated_files($outputDir, $payload["files"]);
     $totalAssets  = copy_input_assets($inputDir, $outputDir, $payload["asset_copies"] ?? []);
-    $resources    = copy_project_resources($repoRoot, $outputDir);
-    echo "Output    : $totalWritten file(s) written, $totalAssets input asset(s), $resources resource(s) from resources/\n";
+    echo "Output    : $totalWritten file(s) written, $totalAssets input asset(s)\n";
 }
 
 // ============================================================================
@@ -328,11 +393,11 @@ if ($opts["skip-tests"]) { echo "\nSkipping tests (--skip-tests).\n"; exit(0); }
 echo "\n--- Running tests/run_tests.php ---\n";
 $rtCode = run_php_script("$repoRoot/tests/run_tests.php", [$projectName]);
 
-echo "\n--- Running tests/visual_diff.js ---\n";
-$vdCode = run_node_script("$repoRoot/tests/visual_diff.js", [$projectName]);
+echo "\n--- Running tests/structural_diff.php ---\n";
+$sdCode = run_php_script("$repoRoot/tests/structural_diff.php", [$projectName]);
 
-if($rtCode !== 0 || $vdCode !== 0){
-    echo "\nTests reported failures (run_tests=$rtCode, visual_diff=$vdCode). Inspect tests/results.json and tests/visual_results.json.\n";
+if ($rtCode !== 0 || $sdCode !== 0) {
+    echo "\nTests reported failures (run_tests=$rtCode, structural_diff=$sdCode). Inspect tests/results.json and tests/structural_results.json.\n";
     exit(1);
 }
 

@@ -35,7 +35,7 @@ For the methodology behind each pattern (the "why" and the recipes), see the mat
 ├── error-404.jpg              404 image asset
 ├── website-logo.png / .svg    Public logo files (sidebar/sitemap/RSS branding)
 ├── robots.txt
-├── sitemap.xml                Static sitemap index pointing at sitemaps/*.php
+├── sitemap.xml                Static <urlset> sitemap of main pages (home, about-us, contact-us, our-blogs) — NOT a sitemapindex
 ├── .htaccess                  Apache mod_rewrite: clean URL rewrites, security headers, error docs
 │
 ├── includes/                  Shared layout fragments + per-request config
@@ -61,6 +61,7 @@ For the methodology behind each pattern (the "why" and the recipes), see the mat
 │   └── blogRedirects.php      Per-slug header() redirects (empty by default)
 │
 ├── blogs_on/                  Single-article subtree
+│   ├── .htaccess              Subdirectory routing: security headers + RewriteRule → blog_details.php?blog_url=$1
 │   ├── index.php              Redirect stub
 │   └── blog_details.php       Reads ?blog_url=<slug>; renders article + comments form + related
 │
@@ -69,10 +70,11 @@ For the methodology behind each pattern (the "why" and the recipes), see the mat
 │   └── rss.php                application/rss+xml output for last N articles
 │
 ├── sitemaps/                  Generated XML sitemaps — one PHP file per content slice
+│   ├── .htaccess              Rewrites <name>.xml → <name>.php for clean sitemap URLs used in robots.txt
 │   ├── index.php              Redirect stub
 │   ├── authors.php
 │   ├── category.php
-│   └── <slice>.php            One per content slice (per-category, blog-1, blog-2, ...)
+│   └── <slice>.php            One per content slice (per main_category from features.yaml, plus blog-1, blog-2)
 │
 └── assets/
     ├── index.php              Redirect stub (in every subfolder of assets/)
@@ -118,9 +120,10 @@ Rewrite rules:
 
 - **DB:** `$con` (PDO, utf8mb4, `ATTR_ERRMODE = ERRMODE_EXCEPTION`)
 - **Tenant key:** site-slug global (e.g. `$wiscoy_webSlug`) — every blog query filters `WHERE my_web_url = ?` with it
-- **URLs:** site base (env-switched on `$_SERVER["SERVER_NAME"]`) + any cross-site URLs the project needs (e.g. shared image host)
-- **Brand:** `$shortTitle`, `$adm_email`, `$adm_facebook`, `$adm_twitter`, `$adm_instagram`, `$adm_linkedin`, `$adm_whatsapp`, `$adm_pinterest`, `$adm_desc`, `$adm_keywords`, plus contact info
-- **Niche filters:** raw SQL fragments (`$myTopNiche`, `$greyNiche`) concatenated into queries to exclude categories
+- **URLs:** `$wiscoy_url` (env-switched site base); `$reverbURL = "https://www.reverbtimemag.com/"` (cross-site image host, placed after env block before try/catch)
+- **Brand:** `$shortTitle`, `$adm_email` (`admin@<domain>`), social URLs built from `website_slug` (e.g. `$adm_facebook = "https://www.facebook.com/<slug>"`), `$adm_desc`, `$adm_keywords` (main_categories + ", magazine, blog, articles"), contact info
+- **`$myTopNiche`** — `"AND \`blog_category\` NOT IN ('<cat1>', '<cat2>', ...)"` built from ALL `site.main_categories` in features.yaml. Never an empty string.
+- **`$greyNiche`** — `"AND \`blog_category\` NOT IN ('cbd', 'casino', 'vape', 'essay-writing', 'relationship', 'beverage')"`. Same for every project.
 - **Helper:** `extractCleanUrl($url)` — strips query string for canonical URLs
 
 ### Tables referenced
